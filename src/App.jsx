@@ -1702,6 +1702,145 @@ function useSiteContent() {
   return content
 }
 
+function AdminNav({ active }) {
+  return (
+    <div className="admin-nav">
+      <span className="admin-nav-label">admin</span>
+      <button
+        className={`admin-nav-tab${active === 'editor' ? ' active' : ''}`}
+        onClick={() => navigate('/admin')}
+      >editor</button>
+      <button
+        className={`admin-nav-tab${active === 'uploads' ? ' active' : ''}`}
+        onClick={() => navigate('/admin/uploads')}
+      >uploads</button>
+    </div>
+  )
+}
+
+function AdminUploadsPanel() {
+  const [verified, setVerified] = useState(false)
+  const [files, setFiles] = useState([])
+  const [uploadDesc, setUploadDesc] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const uploadInputRef = useRef(null)
+  const { profile: discordProfile } = useDiscordPresence()
+  useAccentColor(discordProfile?.spotify?.album_art_url)
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token')
+    if (!token) { navigate('/admin'); return }
+    fetch('/api/admin/content', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => {
+        if (!r.ok) { localStorage.removeItem('admin_token'); navigate('/admin') }
+        else setVerified(true)
+      })
+      .catch(() => navigate('/admin'))
+  }, [])
+
+  useEffect(() => {
+    if (!verified) return
+    fetch('/api/files').then(r => r.json()).then(setFiles).catch(() => {})
+  }, [verified])
+
+  async function handleUploadFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const token = localStorage.getItem('admin_token')
+    setUploading(true); setUploadError('')
+    const desc = uploadDesc
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
+      try {
+        const res = await fetch('/api/admin/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: file.name, ext, description: desc, data: ev.target.result, size: file.size }),
+        })
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || `Upload failed (${res.status})`) }
+        const { id } = await res.json()
+        setFiles(prev => [{ id, name: file.name, ext, description: desc, size: file.size, created_at: Date.now() }, ...prev])
+        setUploadDesc('')
+      } catch (err) { setUploadError(err.message || 'Upload failed') }
+      setUploading(false); e.target.value = ''
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function deleteUpload(id) {
+    const token = localStorage.getItem('admin_token')
+    await fetch(`/api/admin/files?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    setFiles(prev => prev.filter(f => f.id !== id))
+  }
+
+  function logout() {
+    const token = localStorage.getItem('admin_token')
+    fetch('/api/admin/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {})
+    localStorage.removeItem('admin_token')
+    navigate('/admin')
+  }
+
+  if (!verified) {
+    return (
+      <div className="admin-shell">
+        <div className="top-rainbow-bar" aria-hidden="true" />
+        <div className="page-backdrop" />
+        <p className="admin-checking">checking session…</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="admin-shell">
+      <div className="top-rainbow-bar" aria-hidden="true" />
+      <div className="page-backdrop" />
+      <AdminNav active="uploads" />
+      <div className="admin-panel admin-panel--wide">
+        <div className="admin-panel-header">
+          <h2 className="admin-panel-title"><button onClick={() => navigate('/')} className="admin-site-link">site</button> uploads</h2>
+          <button type="button" className="admin-back" onClick={logout}>logout</button>
+        </div>
+
+        <div className="admin-fields">
+          {files.length > 0 && (
+            <div className="admin-upload-list">
+              {files.map(f => (
+                <div key={f.id} className="admin-upload-item">
+                  <span className="aui-icon">{fileIcon(f.ext)}</span>
+                  <div className="aui-meta">
+                    <span className="aui-name">{f.name}</span>
+                    <span className="aui-detail">{formatBytes(f.size)} · {formatUploadDate(f.created_at)}</span>
+                    {f.description ? <span className="aui-desc">{f.description}</span> : null}
+                  </div>
+                  <button type="button" className="admin-clear-btn" onClick={() => deleteUpload(f.id)} title="Remove">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {files.length === 0 && <p className="admin-hint">no uploads yet</p>}
+
+          {uploadError && <p className="admin-upload-error">{uploadError}</p>}
+          <div className="admin-upload-row">
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="description (optional)"
+              value={uploadDesc}
+              onChange={e => setUploadDesc(e.target.value)}
+            />
+            <input ref={uploadInputRef} type="file" style={{ display: 'none' }} onChange={handleUploadFile} />
+            <button type="button" className="admin-btn admin-btn--sm" onClick={() => uploadInputRef.current?.click()} disabled={uploading}>
+              {uploading ? '…' : '↑ upload file'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AdminPanel() {
   const [step, setStep] = useState(() => localStorage.getItem('admin_token') ? 'check' : 'email')
   const [email, setEmail] = useState('')
@@ -1717,11 +1856,6 @@ function AdminPanel() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [adminFiles, setAdminFiles] = useState([])
-  const [uploadDesc, setUploadDesc] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState('')
-  const uploadInputRef = useRef(null)
   const { profile: discordProfile } = useDiscordPresence()
   const spotify = discordProfile?.spotify
   useAccentColor(spotify?.album_art_url)
@@ -1736,44 +1870,6 @@ function AdminPanel() {
       })
       .catch(() => setStep('email'))
   }, [step, token])
-
-  useEffect(() => {
-    if (step !== 'panel') return
-    fetch('/api/files').then(r => r.json()).then(setAdminFiles).catch(() => {})
-  }, [step])
-
-  async function handleUploadFile(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    setUploadError('')
-    const desc = uploadDesc
-    const reader = new FileReader()
-    reader.onload = async (ev) => {
-      const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
-      try {
-        const res = await fetch('/api/admin/files', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: file.name, ext, description: desc, data: ev.target.result, size: file.size }),
-        })
-        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || `Upload failed (${res.status})`) }
-        const { id } = await res.json()
-        setAdminFiles(prev => [{ id, name: file.name, ext, description: desc, data: ev.target.result, size: file.size, created_at: Date.now() }, ...prev])
-        setUploadDesc('')
-      } catch (err) {
-        setUploadError(err.message || 'Upload failed')
-      }
-      setUploading(false)
-      e.target.value = ''
-    }
-    reader.readAsDataURL(file)
-  }
-
-  async function deleteUpload(id) {
-    await fetch(`/api/admin/files?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-    setAdminFiles(prev => prev.filter(f => f.id !== id))
-  }
 
   async function requestOtp(e) {
     e.preventDefault()
@@ -1911,6 +2007,7 @@ function AdminPanel() {
     <div className="admin-shell">
       <div className="top-rainbow-bar" aria-hidden="true" />
       <div className="page-backdrop" />
+      <AdminNav active="editor" />
       <form className="admin-panel admin-panel--wide" onSubmit={save}>
         <div className="admin-panel-header">
           <h2 className="admin-panel-title"><button onClick={() => navigate('/')} className="admin-site-link">site</button> editor</h2>
@@ -2035,38 +2132,6 @@ function AdminPanel() {
             />
           </div>
 
-          <p className="admin-section-label">uploads</p>
-
-          {adminFiles.length > 0 && (
-            <div className="admin-upload-list">
-              {adminFiles.map(f => (
-                <div key={f.id} className="admin-upload-item">
-                  <span className="aui-icon">{fileIcon(f.ext)}</span>
-                  <div className="aui-meta">
-                    <span className="aui-name">{f.name}</span>
-                    <span className="aui-detail">{formatBytes(f.size)} · {formatUploadDate(f.created_at)}</span>
-                    {f.description ? <span className="aui-desc">{f.description}</span> : null}
-                  </div>
-                  <button type="button" className="admin-clear-btn" onClick={() => deleteUpload(f.id)} title="Remove">✕</button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {uploadError && <p className="admin-upload-error">{uploadError}</p>}
-          <div className="admin-upload-row">
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="description (optional)"
-              value={uploadDesc}
-              onChange={e => setUploadDesc(e.target.value)}
-            />
-            <input ref={uploadInputRef} type="file" style={{ display: 'none' }} onChange={handleUploadFile} />
-            <button type="button" className="admin-btn admin-btn--sm" onClick={() => uploadInputRef.current?.click()} disabled={uploading}>
-              {uploading ? '…' : '↑ upload file'}
-            </button>
-          </div>
         </div>
 
         {error && <p className="admin-error">{error}</p>}
@@ -2105,6 +2170,7 @@ function HardwareWarning() {
 
 export default function App() {
   if (window.location.pathname === '/admin') return <AdminPanel />
+  if (window.location.pathname === '/admin/uploads') return <AdminUploadsPanel />
   if (window.location.pathname === '/uploads') return <UploadsPage />
   if (window.location.pathname === '/trimmer') return <TrimmerPage />
 

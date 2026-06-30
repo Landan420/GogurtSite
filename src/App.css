@@ -2619,10 +2619,6 @@ input[type='range'] {
   line-height: 1;
 }
 
-.rte-effect-btn--sm {
-  font-size: 10px;
-}
-
 /* ── name style picker ───────────────────────────── */
 .style-picker {
   display: grid;

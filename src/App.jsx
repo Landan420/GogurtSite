@@ -1521,14 +1521,14 @@ const RTE_TOOLS = [
 ]
 
 const RTE_EFFECTS = [
-  { cls: 'rainbow-text',        label: '🌈', title: 'Rainbow'  },
-  { cls: 'name-style-neon',     label: '⚡', title: 'Neon'     },
-  { cls: 'name-style-holo',     label: '✦',  title: 'Holo'     },
-  { cls: 'name-style-glitch',   label: '▓',  title: 'Glitch', sm: true },
-  { cls: 'name-style-fire',     label: '🔥', title: 'Fire'     },
-  { cls: 'name-style-ice',      label: '❄',  title: 'Ice'      },
-  { cls: 'name-style-chrome',   label: '◈',  title: 'Chrome'   },
-  { cls: 'name-style-aurora',   label: '◉',  title: 'Aurora'   },
+  { cls: 'rainbow-text',        label: '🌈', title: 'Rainbow'                    },
+  { cls: 'name-style-neon',     label: '⚡', title: 'Neon'                      },
+  { cls: 'name-style-holo',     label: '✦',  title: 'Holo',   size: '18px'      },
+  { cls: 'name-style-glitch',   label: '▓',  title: 'Glitch', size: '10px'      },
+  { cls: 'name-style-fire',     label: '🔥', title: 'Fire'                      },
+  { cls: 'name-style-ice',      label: '❄',  title: 'Ice',    size: '18px'      },
+  { cls: 'name-style-chrome',   label: '◈',  title: 'Chrome', size: '18px'      },
+  { cls: 'name-style-aurora',   label: '◉',  title: 'Aurora', size: '18px'      },
 ]
 
 function RichBioEditor({ value, onChange }) {
@@ -1617,10 +1617,11 @@ function RichBioEditor({ value, onChange }) {
             key={fx.cls}
             type="button"
             title={fx.title}
-            className={`rte-effect-btn${fx.sm ? ' rte-effect-btn--sm' : ''}`}
+            className="rte-effect-btn"
+            style={fx.size ? { fontSize: fx.size } : undefined}
             onMouseDown={e => { e.preventDefault(); applyEffect(fx.cls) }}
           >
-            <span className={fx.cls}>{fx.label}</span>
+            {fx.label}
           </button>
         ))}
       </div>

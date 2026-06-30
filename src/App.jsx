@@ -1524,7 +1524,7 @@ const RTE_EFFECTS = [
   { cls: 'rainbow-text',        label: '🌈', title: 'Rainbow'  },
   { cls: 'name-style-neon',     label: '⚡', title: 'Neon'     },
   { cls: 'name-style-holo',     label: '✦',  title: 'Holo'     },
-  { cls: 'name-style-glitch',   label: '▓',  title: 'Glitch'   },
+  { cls: 'name-style-glitch',   label: '▓',  title: 'Glitch', sm: true },
   { cls: 'name-style-fire',     label: '🔥', title: 'Fire'     },
   { cls: 'name-style-ice',      label: '❄',  title: 'Ice'      },
   { cls: 'name-style-chrome',   label: '◈',  title: 'Chrome'   },
@@ -1617,7 +1617,7 @@ function RichBioEditor({ value, onChange }) {
             key={fx.cls}
             type="button"
             title={fx.title}
-            className={`rte-effect-btn`}
+            className={`rte-effect-btn${fx.sm ? ' rte-effect-btn--sm' : ''}`}
             onMouseDown={e => { e.preventDefault(); applyEffect(fx.cls) }}
           >
             <span className={fx.cls}>{fx.label}</span>

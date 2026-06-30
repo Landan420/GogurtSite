@@ -2304,7 +2304,7 @@ input[type='range'] {
   color: #fff;
   display: inline-block;
   will-change: transform;
-  animation: nsGlitch 5s infinite;
+  animation: nsGlitch 1.6s infinite;
 }
 
 .name-style-chrome {
@@ -2437,13 +2437,22 @@ input[type='range'] {
   100% { background-position: 300% 50%; }
 }
 @keyframes nsGlitch {
-  0%, 85%, 100% { text-shadow: none; }
-  86% { text-shadow: -3px 0 #ff0044, 3px 0 #00eeff; }
-  87% { text-shadow: 3px 0 #ff0044, -3px 0 #00eeff; transform: translate(-2px,0) skewX(-2deg); }
-  88% { text-shadow: -2px 0 #ff0044, 2px 0 #00eeff; transform: translate(1px,0); }
-  89% { text-shadow: none; transform: none; }
-  90% { text-shadow: 4px 0 #ff0044, -4px 0 #00eeff; transform: skewX(3deg); }
-  91% { text-shadow: none; transform: none; }
+  0%,  7%,  100% { text-shadow: none; transform: none; }
+  2%  { text-shadow: -3px 0 #ff0044, 3px 0 #00eeff; transform: translate(-2px,0) skewX(-3deg); }
+  4%  { text-shadow: 3px 0 #ff0044, -3px 0 #00eeff; transform: translate(2px,0); }
+  6%  { text-shadow: -1px 0 #ff0044, 1px 0 #00eeff; }
+
+  33%, 42% { text-shadow: none; transform: none; }
+  35% { text-shadow: 4px 0 #ff0044, -2px 0 #00eeff; transform: skewX(5deg); }
+  37% { text-shadow: -4px 0 #00eeff, 2px 0 #ff0044; transform: translate(-2px,1px) skewX(-2deg); }
+  39% { text-shadow: 2px 0 #ff0044, -4px 0 #00eeff; transform: translate(1px,0); }
+  41% { text-shadow: none; }
+
+  66%, 75% { text-shadow: none; transform: none; }
+  68% { text-shadow: -2px 0 #ff0044, 2px 0 #00eeff; transform: translate(-1px,0); }
+  70% { text-shadow: 3px 0 #00eeff, -3px 0 #ff0044; transform: skewX(-4deg); }
+  72% { text-shadow: -3px 0 #ff0044, 1px 0 #00eeff; transform: translate(2px,0) skewX(2deg); }
+  74% { text-shadow: none; transform: none; }
 }
 @keyframes nsChrome {
   0%, 100% { background-position: 0% 0%; }
@@ -2606,8 +2615,12 @@ input[type='range'] {
 }
 
 .rte-effect-btn {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1;
+}
+
+.rte-effect-btn--sm {
+  font-size: 10px;
 }
 
 /* ── name style picker ───────────────────────────── */

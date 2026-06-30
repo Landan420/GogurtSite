@@ -1555,15 +1555,33 @@ function RichBioEditor({ value, onChange }) {
     const sel = window.getSelection()
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
     const range = sel.getRangeAt(0)
-    const span = document.createElement('span')
-    span.className = cls
-    try {
-      range.surroundContents(span)
-    } catch {
-      span.textContent = range.toString()
-      range.deleteContents()
-      range.insertNode(span)
+
+    // Walk up from selection anchor to find an existing span with this class
+    let existingSpan = null
+    let node = range.commonAncestorContainer
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
+    let cursor = node
+    while (cursor && cursor !== editorRef.current) {
+      if (cursor.tagName === 'SPAN' && cursor.classList.contains(cls)) {
+        existingSpan = cursor; break
+      }
+      cursor = cursor.parentElement
     }
+
+    if (existingSpan) {
+      // Toggle off: select the whole span then replace it with its inner content
+      const unwrapRange = document.createRange()
+      unwrapRange.selectNode(existingSpan)
+      sel.removeAllRanges()
+      sel.addRange(unwrapRange)
+      document.execCommand('insertHTML', false, existingSpan.innerHTML)
+    } else {
+      // Wrap: capture selection HTML and insert wrapped version (undoable via execCommand)
+      const tmp = document.createElement('div')
+      tmp.appendChild(range.cloneContents())
+      document.execCommand('insertHTML', false, `<span class="${cls}">${tmp.innerHTML}</span>`)
+    }
+
     skipSync.current = true
     onChange(editorRef.current.innerHTML)
     setTimeout(() => { skipSync.current = false }, 0)

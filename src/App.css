@@ -460,8 +460,8 @@
 }
 
 @keyframes emoji-breathe {
-  0%, 100% { filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.30)); }
-  50%       { filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.90)); }
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--accent-rgb), 0.25)); }
+  50%       { filter: drop-shadow(0 0 7px rgba(var(--accent-rgb), 0.72)); }
 }
 
 .custom-status span {

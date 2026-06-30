@@ -54,6 +54,7 @@ export async function onRequestPost({ request, env }) {
   if (payload.code !== code) return json({ error: 'Invalid or expired code' }, { status: 401 })
   if (Date.now() > payload.expiry) return json({ error: 'Code expired' }, { status: 401 })
 
-  const sessionToken = await encrypt(secret, { email, expiry: Date.now() + 24 * 60 * 60 * 1000 })
+  const ttl = body.remember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+  const sessionToken = await encrypt(secret, { email, expiry: Date.now() + ttl })
   return json({ token: sessionToken })
 }

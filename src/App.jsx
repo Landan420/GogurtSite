@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import DOMPurify from 'dompurify'
 import TrimmerPage from './TrimmerPage'
 import { DEFAULT_ACCENT, extractDominantColor, animateAccent, useAccentColor } from './presence'
 import {
@@ -60,6 +61,11 @@ const SPEC_SECTIONS = [
     ],
   },
 ]
+
+function navigate(href) {
+  document.documentElement.classList.add('page-leaving')
+  setTimeout(() => { window.location.href = href }, 210)
+}
 
 const DISCORD_ID = '419739869229875211'
 const BIRTHDAY    = new Date('2004-06-14T00:00:00-05:00')
@@ -771,7 +777,7 @@ function UploadsPage() {
     <main className="bio-shell uploads-page-shell">
       <div className="top-rainbow-bar" aria-hidden="true" />
       <div className="page-backdrop" />
-      <a href="/" className="uploads-back">← back</a>
+      <button onClick={() => navigate('/')} className="uploads-back">← back</button>
       <div className="uploads-page-content">
         <h1 className="uploads-page-title">uploads</h1>
         <p className="uploads-page-sub">files, scripts &amp; stuff</p>
@@ -1063,7 +1069,7 @@ function AboutCard({ onOpenSpecs, aboutBio }) {
         </div>
       </div>
       <div className="about-copy">
-        <div className="about-bio-text" dangerouslySetInnerHTML={{ __html: bioHtml }} />
+        <div className="about-bio-text" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bioHtml, { ALLOWED_TAGS: ['h2','h3','p','span','b','i','u','s','strong','em','ul','ol','li','blockquote','br','div'], ALLOWED_ATTR: ['class','style'] }) }} />
         <div>
           <button className="specs-btn" onClick={onOpenSpecs}>
             My Setup
@@ -1515,6 +1521,17 @@ const RTE_TOOLS = [
   { cmd: 'removeFormat', label: '✕', title: 'Clear formatting' },
 ]
 
+const RTE_EFFECTS = [
+  { cls: 'rainbow-text',        label: '🌈', title: 'Rainbow'  },
+  { cls: 'name-style-neon',     label: '⚡', title: 'Neon'     },
+  { cls: 'name-style-holo',     label: '✦',  title: 'Holo'     },
+  { cls: 'name-style-glitch',   label: '▓',  title: 'Glitch'   },
+  { cls: 'name-style-fire',     label: '🔥', title: 'Fire'     },
+  { cls: 'name-style-ice',      label: '❄',  title: 'Ice'      },
+  { cls: 'name-style-chrome',   label: '◈',  title: 'Chrome'   },
+  { cls: 'name-style-aurora',   label: '◉',  title: 'Aurora'   },
+]
+
 function RichBioEditor({ value, onChange }) {
   const editorRef = useRef(null)
   const skipSync = useRef(false)
@@ -1528,6 +1545,25 @@ function RichBioEditor({ value, onChange }) {
   function exec(cmd, arg = null) {
     editorRef.current?.focus()
     document.execCommand(cmd, false, arg)
+    skipSync.current = true
+    onChange(editorRef.current.innerHTML)
+    setTimeout(() => { skipSync.current = false }, 0)
+  }
+
+  function applyEffect(cls) {
+    editorRef.current?.focus()
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
+    const range = sel.getRangeAt(0)
+    const span = document.createElement('span')
+    span.className = cls
+    try {
+      range.surroundContents(span)
+    } catch {
+      span.textContent = range.toString()
+      range.deleteContents()
+      range.insertNode(span)
+    }
     skipSync.current = true
     onChange(editorRef.current.innerHTML)
     setTimeout(() => { skipSync.current = false }, 0)
@@ -1556,6 +1592,20 @@ function RichBioEditor({ value, onChange }) {
             </button>
           )
         })}
+      </div>
+      <div className="rte-toolbar rte-toolbar--effects">
+        <span className="rte-effects-label">fx</span>
+        {RTE_EFFECTS.map(fx => (
+          <button
+            key={fx.cls}
+            type="button"
+            title={fx.title}
+            className={`rte-effect-btn`}
+            onMouseDown={e => { e.preventDefault(); applyEffect(fx.cls) }}
+          >
+            <span className={fx.cls}>{fx.label}</span>
+          </button>
+        ))}
       </div>
       <div
         ref={editorRef}
@@ -1639,6 +1689,7 @@ function AdminPanel() {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [otpToken, setOtpToken] = useState('')
+  const [remember, setRemember] = useState(true)
   const [token, setToken] = useState(() => localStorage.getItem('admin_token') || '')
   const [content, setContent] = useState({
     custom_status: '', location: '', about_bio: '',
@@ -1729,7 +1780,7 @@ function AdminPanel() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, otpToken }),
+        body: JSON.stringify({ email, code, otpToken, remember }),
       })
       const data = await res.json()
       if (data.token) {
@@ -1821,6 +1872,10 @@ function AdminPanel() {
             autoComplete="one-time-code"
           />
           {error && <p className="admin-error">{error}</p>}
+          <label className="admin-remember">
+            <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
+            keep me logged in for 30 days
+          </label>
           <button className="admin-btn" type="submit" disabled={loading}>
             {loading ? '…' : 'verify'}
           </button>
@@ -1840,7 +1895,7 @@ function AdminPanel() {
       <div className="page-backdrop" />
       <form className="admin-panel admin-panel--wide" onSubmit={save}>
         <div className="admin-panel-header">
-          <h2 className="admin-panel-title"><a href="/" className="admin-site-link">site</a> editor</h2>
+          <h2 className="admin-panel-title"><button onClick={() => navigate('/')} className="admin-site-link">site</button> editor</h2>
           <button type="button" className="admin-back" onClick={logout}>logout</button>
         </div>
 
@@ -2067,17 +2122,17 @@ export default function App() {
     <main className="bio-shell">
       <div className={`top-rainbow-bar${(profile.spotify || selectedTrack) ? ' top-rainbow-bar--playing' : ''}`} aria-hidden="true" />
       <div className={`ascii-comment${navOpen ? '' : ' ascii-comment--closed'}`}>
+        <span aria-hidden="true">{siteContent.ascii_comment || 'discord.gg/gogurt'}</span>
+        <button onClick={e => { e.preventDefault(); navigate('/uploads') }} className="uploads-top-link">uploads</button>
+        <button onClick={e => { e.preventDefault(); navigate('/trimmer') }} className="uploads-top-link">trimmer</button>
+        <button onClick={e => { e.preventDefault(); navigate('/admin') }} className="uploads-top-link">login</button>
         <button
           className="ascii-comment-close"
           onClick={() => setNavOpen(false)}
           aria-label="Close navigation"
         >
-          <X size={12} />
+          <X size={11} />
         </button>
-        <span aria-hidden="true">{siteContent.ascii_comment || 'discord.gg/gogurt'}</span>
-        <a href="/uploads" className="uploads-top-link">uploads</a>
-        <a href="/trimmer" className="uploads-top-link">trimmer</a>
-        <a href="/admin" className="uploads-top-link">login</a>
       </div>
       <div className="page-backdrop" />
       <section className="bio-container">

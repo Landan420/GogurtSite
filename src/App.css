@@ -1,3 +1,23 @@
+/* ── page transitions ────────────────────────────── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+html {
+  transition: opacity 200ms ease;
+}
+html.page-leaving {
+  opacity: 0;
+}
+
+.bio-shell,
+.admin-shell,
+.uploads-page-shell,
+.trimmer-shell {
+  animation: page-enter 280ms ease-out both;
+}
+
 :root {
   --accent-r: 143;
   --accent-g: 216;
@@ -686,8 +706,11 @@
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.28);
   text-decoration: none;
-  transition: color 0.2s ease;
+  background: none;
+  border: none;
   border-top: 1px solid rgba(var(--accent-rgb), 0.15);
+  cursor: pointer;
+  transition: color 0.2s ease;
   width: 100%;
   text-align: center;
   padding-top: 5px;
@@ -712,6 +735,9 @@
   left: 18px;
   z-index: 4;
   font-family: var(--mono);
+  background: none;
+  border: none;
+  cursor: pointer;
   font-size: 11px;
   color: rgba(255,255,255,0.35);
   text-decoration: none;
@@ -2151,7 +2177,7 @@ input[type='range'] {
     top: 6px;
     right: 14px;
     background: rgba(7, 8, 11, 0.44);
-    padding-right: 22px;
+    padding: 6px 9px;
   }
   .ascii-comment > span {
     color: rgba(226, 238, 255, 0.42);
@@ -2160,20 +2186,18 @@ input[type='range'] {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    background: none;
+    width: 100%;
+    padding: 4px 0 0;
+    margin-top: 2px;
     border: none;
-    color: rgba(var(--accent-rgb), 0.55);
+    border-top: 1px solid rgba(var(--accent-rgb), 0.12);
+    background: none;
+    color: rgba(var(--accent-rgb), 0.40);
     cursor: pointer;
     line-height: 1;
   }
   .ascii-comment-close:hover {
-    color: rgba(var(--accent-rgb), 0.9);
+    color: rgba(var(--accent-rgb), 0.85);
   }
   .ascii-comment--closed {
     transform: translateY(calc(-100% - 12px));
@@ -2240,6 +2264,15 @@ input[type='range'] {
 
   .song-row em {
     display: none;
+  }
+
+  /* social badges: always show label on mobile (no hover on touch) */
+  .social-badges .profile-badge {
+    max-width: 160px;
+  }
+  .social-badges .badge-label {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -2563,6 +2596,27 @@ input[type='range'] {
 .rte-body h3 { font-size: 15px; margin: 6px 0 3px; color: #ddd; }
 .rte-body ul { padding-left: 20px; margin: 4px 0; }
 
+.rte-toolbar--effects {
+  border-top: none;
+  border-bottom: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.rte-effects-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  padding: 0 4px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.rte-effect-btn {
+  font-size: 14px;
+  line-height: 1;
+}
+
 /* ── name style picker ───────────────────────────── */
 .style-picker {
   display: grid;
@@ -2726,6 +2780,24 @@ input[type='range'] {
 
 .admin-back:hover { color: var(--text); }
 
+.admin-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-soft);
+  cursor: pointer;
+  margin: 4px 0;
+}
+
+.admin-remember input[type="checkbox"] {
+  accent-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
 .admin-error {
   color: #ff4466;
   font-size: 12px;
@@ -2753,6 +2825,11 @@ input[type='range'] {
   color: rgb(var(--accent-rgb));
   filter: brightness(1.4);
   text-decoration: none;
+  background: none;
+  border: none;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
   transition: filter 160ms;
 }
 .admin-site-link:hover {

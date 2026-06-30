@@ -1156,7 +1156,7 @@ function SongsCard({ onSelectTrack }) {
           <article key={`${song.title}-${song.endTime || song.rank || index}`} className="song-row">
             <div className="song-index">{pad(index + 1)}</div>
             <div className="song-art-wrap">
-              <img className="song-art" src={song.image || heroImage} alt="" draggable="false" />
+              <img className="song-art" src={song.image || heroImage} alt="" draggable="false" loading="lazy" />
               <button
                 type="button"
                 className="song-play-button"
@@ -1397,6 +1397,7 @@ function GameImage({ headerUrl, appid, iconUrl, name }) {
       src={urls[idx]}
       alt={name}
       draggable="false"
+      loading="lazy"
       onError={() => setIdx((i) => i + 1)}
     />
   )

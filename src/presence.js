@@ -36,7 +36,10 @@ function hslToRgb(h, s, l) {
 // Works in hue-space so red stays red, blue stays blue.
 // Frequency-weighted: the color covering the most area wins.
 // Outputs a pastel at fixed lightness so every hue looks equally vivid on the site.
+const _colorCache = new Map()
+
 export function extractDominantColor(url) {
+  if (_colorCache.has(url)) return Promise.resolve(_colorCache.get(url))
   return new Promise(resolve => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
@@ -67,7 +70,9 @@ export function extractDominantColor(url) {
 
         // Fewer than 3% colored pixels → grayscale image → return near-white
         if (totalWeight < S * S * 0.03) {
-          resolve([215, 220, 245])
+          const fallback = [215, 220, 245]
+          _colorCache.set(url, fallback)
+          resolve(fallback)
           return
         }
 
@@ -85,7 +90,9 @@ export function extractDominantColor(url) {
         const hue = (peak + 0.5) * 10
 
         // Output a pastel at the dominant hue — matches the site's light-accent style
-        resolve(hslToRgb(hue, 0.90, 0.76))
+        const result = hslToRgb(hue, 0.90, 0.76)
+        _colorCache.set(url, result)
+        resolve(result)
       } catch { resolve(null) }
     }
     img.onerror = () => resolve(null)

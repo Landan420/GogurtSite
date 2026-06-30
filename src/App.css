@@ -118,6 +118,7 @@
   flex-direction: column;
   align-items: center;
   gap: 0;
+  transition: transform 220ms ease-out, opacity 220ms ease-out;
 }
 .ascii-comment > span {
   color: rgba(var(--accent-rgb), 0.85);
@@ -127,6 +128,9 @@
   letter-spacing: 0.04em;
   text-shadow: 0 0 12px rgba(var(--accent-rgb), 0.45);
   pointer-events: none;
+}
+.ascii-comment-close {
+  display: none;
 }
 
 .bio-container {
@@ -2086,9 +2090,34 @@ input[type='range'] {
     top: 6px;
     right: 14px;
     background: rgba(7, 8, 11, 0.44);
+    padding-right: 22px;
   }
   .ascii-comment > span {
     color: rgba(226, 238, 255, 0.42);
+  }
+  .ascii-comment-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: rgba(var(--accent-rgb), 0.55);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .ascii-comment-close:hover {
+    color: rgba(var(--accent-rgb), 0.9);
+  }
+  .ascii-comment--closed {
+    transform: translateY(calc(-100% - 12px));
+    opacity: 0;
+    pointer-events: none;
   }
 
   .profile-card,

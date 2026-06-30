@@ -2021,7 +2021,21 @@ export default function App() {
   const siteContent = useSiteContent()
   const [selectedTrack, setSelectedTrack] = useState(null)
   const [specsOpen, setSpecsOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(true)
+  const scrollPrev = useRef(0)
   useAccentColor(selectedTrack?.image || profile.spotify?.album_art_url)
+
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 620px)').matches) return
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y > scrollPrev.current + 5 && y > 40) setNavOpen(false)
+      else if (y < 30) setNavOpen(true)
+      scrollPrev.current = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const mergedProfile = {
     ...profile,
@@ -2033,7 +2047,14 @@ export default function App() {
   return (
     <main className="bio-shell">
       <div className={`top-rainbow-bar${(profile.spotify || selectedTrack) ? ' top-rainbow-bar--playing' : ''}`} aria-hidden="true" />
-      <div className="ascii-comment">
+      <div className={`ascii-comment${navOpen ? '' : ' ascii-comment--closed'}`}>
+        <button
+          className="ascii-comment-close"
+          onClick={() => setNavOpen(false)}
+          aria-label="Close navigation"
+        >
+          <X size={12} />
+        </button>
         <span aria-hidden="true">{siteContent.ascii_comment || 'discord.gg/gogurt'}</span>
         <a href="/uploads" className="uploads-top-link">uploads</a>
         <a href="/trimmer" className="uploads-top-link">trimmer</a>

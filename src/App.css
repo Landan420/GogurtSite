@@ -1,21 +1,14 @@
 /* ── page transitions ────────────────────────────── */
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-html {
-  transition: opacity 200ms ease;
-}
-html.page-leaving {
-  opacity: 0;
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .bio-shell,
 .admin-shell,
 .uploads-page-shell,
 .trimmer-shell {
-  animation: page-enter 280ms ease-out both;
+  animation: page-enter 160ms ease-out both;
 }
 
 :root {

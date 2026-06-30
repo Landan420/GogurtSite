@@ -388,7 +388,7 @@ export default function TrimmerPage() {
     <main className="bio-shell trimmer-shell">
       <div className="top-rainbow-bar" aria-hidden="true" />
       <div className="page-backdrop" />
-      <button onClick={() => { document.documentElement.classList.add('page-leaving'); setTimeout(() => { window.location.href = '/' }, 210) }} className="uploads-back">← back</button>
+      <button onClick={() => { window.location.href = '/' }} className="uploads-back">← back</button>
 
       <div className="trimmer-page">
         <h1 className="uploads-page-title">trimmer</h1>

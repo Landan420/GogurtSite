@@ -63,8 +63,7 @@ const SPEC_SECTIONS = [
 ]
 
 function navigate(href) {
-  document.documentElement.classList.add('page-leaving')
-  setTimeout(() => { window.location.href = href }, 210)
+  window.location.href = href
 }
 
 const DISCORD_ID = '419739869229875211'

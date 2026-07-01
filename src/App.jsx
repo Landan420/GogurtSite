@@ -1141,6 +1141,21 @@ function SpotifyCard({ spotify }) {
       <div className="section-title-row">
         <h2>What i'm playing now.</h2>
         <div className="icon-actions">
+          {isListening && (
+            <div className="spotify-equalizer" aria-hidden="true">
+              {[
+                { h: 10, dur: 820,  del: 0   },
+                { h: 16, dur: 1080, del: 140 },
+                { h: 7,  dur: 660,  del: 300 },
+                { h: 14, dur: 940,  del: 60  },
+                { h: 9,  dur: 760,  del: 220 },
+                { h: 13, dur: 1020, del: 380 },
+                { h: 6,  dur: 700,  del: 100 },
+              ].map((b, i) => (
+                <span key={i} style={{ height: b.h, animationDuration: `${b.dur}ms`, animationDelay: `${b.del}ms` }} />
+              ))}
+            </div>
+          )}
           <a
             href={spotify?.track_id ? `https://open.spotify.com/track/${spotify.track_id}` : SPOTIFY_PROFILE_URL}
             target="_blank"

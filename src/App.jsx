@@ -702,6 +702,7 @@ function useVisualizer(active, level, analyserRef) {
 
     function draw() {
       const { w, h, ratio } = sizeRef.current
+      if (w < 8 || h < 8) { animationId = window.requestAnimationFrame(draw); return }
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
       context.clearRect(0, 0, w, h)
 
@@ -724,8 +725,8 @@ function useVisualizer(active, level, analyserRef) {
         peakVel = new Float32Array(bars).fill(0)
       }
 
-      const alpha = active ? 0.48 : 0.14
-      const alphaTop = active ? 0.85 : 0.22
+      const alpha = active ? 0.75 : 0.22
+      const alphaTop = active ? 1.0 : 0.35
 
       for (let index = 0; index < bars; index += 1) {
         let heightNorm

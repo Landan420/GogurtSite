@@ -21,8 +21,6 @@ import {
   MemoryStick,
   Monitor,
   Mouse,
-  Pause,
-  Play,
   Plus,
   RefreshCw,
   Search,
@@ -30,7 +28,6 @@ import {
   Terminal,
   Ticket,
   Upload,
-  Volume2,
   X,
 } from 'lucide-react'
 import heroImage from './assets/hero.png'
@@ -624,161 +621,6 @@ function useServerStats() {
   return stats
 }
 
-const audioGraphCache = new WeakMap()
-
-function connectAnalyser(audioElement) {
-  if (!audioElement) return null
-
-  let entry = audioGraphCache.get(audioElement)
-  if (!entry) {
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext
-      const ctx = new AudioContextClass()
-      const source = ctx.createMediaElementSource(audioElement)
-      const analyser = ctx.createAnalyser()
-      analyser.fftSize = 512
-      analyser.smoothingTimeConstant = 0.88
-      source.connect(analyser)
-      analyser.connect(ctx.destination)
-      entry = { ctx, analyser }
-      audioGraphCache.set(audioElement, entry)
-    } catch {
-      return null
-    }
-  }
-
-  if (entry.ctx.state === 'suspended') entry.ctx.resume().catch(() => {})
-  return entry.analyser
-}
-
-function useVisualizer(active, level, analyserRef) {
-  const canvasRef = useRef(null)
-  const sizeRef = useRef({ w: 1, h: 1, ratio: 1 })
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    function sync() {
-      const ratio = window.devicePixelRatio || 1
-      const rect = canvas.getBoundingClientRect()
-      const w = Math.max(1, rect.width)
-      const h = Math.max(1, rect.height)
-      sizeRef.current = { w, h, ratio }
-      canvas.width = Math.floor(w * ratio)
-      canvas.height = Math.floor(h * ratio)
-    }
-
-    sync()
-    const ro = new ResizeObserver(sync)
-    ro.observe(canvas)
-    window.addEventListener('resize', sync, { passive: true })
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', sync)
-    }
-  }, [])
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return undefined
-
-    const context = canvas.getContext('2d')
-    let frame = 0
-    let animationId
-    let freqData = null
-    let peaks = null
-    let peakVel = null
-    let accentR = 143, accentG = 216, accentB = 255
-
-    function readAccent() {
-      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb') || '143,216,255'
-      const parts = v.split(',')
-      accentR = parseInt(parts[0].trim(), 10) || 143
-      accentG = parseInt(parts[1].trim(), 10) || 216
-      accentB = parseInt(parts[2].trim(), 10) || 255
-    }
-    readAccent()
-
-    function draw() {
-      const { w, h, ratio } = sizeRef.current
-      if (w < 8 || h < 8) { animationId = window.requestAnimationFrame(draw); return }
-      context.setTransform(ratio, 0, 0, ratio, 0, 0)
-      context.clearRect(0, 0, w, h)
-
-      if (frame % 60 === 0) readAccent()
-
-      const analyser = active ? analyserRef?.current : null
-      if (analyser) {
-        if (!freqData || freqData.length !== analyser.frequencyBinCount) {
-          freqData = new Uint8Array(analyser.frequencyBinCount)
-        }
-        analyser.getByteFrequencyData(freqData)
-      }
-
-      const bars = 64
-      const gap = 2
-      const barWidth = (w - gap * (bars - 1)) / bars
-
-      if (!peaks) {
-        peaks = new Float32Array(bars).fill(0)
-        peakVel = new Float32Array(bars).fill(0)
-      }
-
-      const alpha = active ? 0.75 : 0.22
-      const alphaTop = active ? 1.0 : 0.35
-
-      for (let index = 0; index < bars; index += 1) {
-        let heightNorm
-        if (freqData) {
-          const usableBins = Math.max(1, Math.floor(freqData.length * 0.72))
-          const t = index / (bars - 1)
-          const bin = Math.min(usableBins - 1, Math.floor(t * usableBins))
-          const raw = freqData[bin] / 255
-          const boosted = Math.pow(raw, 0.55) * (0.82 + t * 0.45)
-          heightNorm = Math.max(0.04, Math.min(1, boosted)) * level
-        } else {
-          const wave = Math.sin(frame * 0.028 + index * 0.58)
-          const jitter = Math.cos(frame * 0.016 + index * 0.19)
-          heightNorm = (0.12 + Math.abs(wave) * 0.62 + jitter * 0.06) * level
-        }
-
-        if (heightNorm >= peaks[index]) {
-          peaks[index] = heightNorm
-          peakVel[index] = 0
-        } else {
-          peakVel[index] += 0.0005
-          peaks[index] = Math.max(0, peaks[index] - peakVel[index])
-        }
-
-        const height = Math.max(1, heightNorm * h)
-        const x = index * (barWidth + gap)
-        const y = h - height
-
-        // Body
-        context.fillStyle = `rgba(${accentR},${accentG},${accentB},${alpha})`
-        context.fillRect(x, y, barWidth, height)
-        // Bright cap (top 2px)
-        context.fillStyle = `rgba(${accentR},${accentG},${accentB},${alphaTop})`
-        context.fillRect(x, y, barWidth, Math.min(2, height))
-        // Falling peak dot
-        if (active && peaks[index] > 0.06) {
-          context.fillStyle = `rgba(${accentR},${accentG},${accentB},0.82)`
-          context.fillRect(x, h - peaks[index] * h - 1.5, barWidth, 2)
-        }
-      }
-
-      frame += active ? 1 : 0.15
-      animationId = window.requestAnimationFrame(draw)
-    }
-
-    draw()
-    return () => window.cancelAnimationFrame(animationId)
-  }, [active, level, analyserRef])
-
-  return canvasRef
-}
-
 const PARTICLE_COUNT = 65
 
 function drawStar(ctx, x, y, r, angle) {
@@ -1284,7 +1126,7 @@ function AboutCard({ onOpenSpecs, aboutBio }) {
   )
 }
 
-function SongsCard({ onSelectTrack }) {
+function SongsCard() {
   const tiltRef = useTilt()
   const [mode, setMode] = useState('recent')
   const [query, setQuery] = useState('')
@@ -1397,16 +1239,6 @@ function SongsCard({ onSelectTrack }) {
             <div className="song-index">{pad(index + 1)}</div>
             <div className="song-art-wrap">
               <img className="song-art" src={song.image || heroImage} alt="" draggable="false" loading="lazy" />
-              <button
-                type="button"
-                className="song-play-button"
-                onClick={() => onSelectTrack(song)}
-                aria-label={`Preview ${song.title}`}
-                disabled={!song.previewUrl}
-                title={song.previewUrl ? 'Play preview' : 'No preview available'}
-              >
-                <Play size={18} />
-              </button>
             </div>
             <div>
               <div className="song-title-line">
@@ -1491,110 +1323,6 @@ function ActivitiesCard({ activities, serverStats }) {
   )
 }
 
-function MediaPlayer({ track, onClose }) {
-  const [playing, setPlaying] = useState(true)
-  const [volume, setVolume] = useState(67)
-  const [position, setPosition] = useState(0)
-  const audioRef = useRef(null)
-  const analyserRef = useRef(null)
-  const canvasRef = useVisualizer(playing, volume / 100, analyserRef)
-  const tiltRef = useTilt(1.5)
-
-  useEffect(() => {
-    setPosition(0)
-    setPlaying(Boolean(track?.previewUrl))
-  }, [track])
-
-  useEffect(() => {
-    if (track?.previewUrl && audioRef.current) {
-      analyserRef.current = connectAnalyser(audioRef.current)
-    }
-  }, [track])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !track?.previewUrl) return
-    audio.volume = (volume / 100) ** 2
-  }, [volume, track])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !track?.previewUrl) return undefined
-
-    if (playing) {
-      audio.play().catch(() => setPlaying(false))
-    } else {
-      audio.pause()
-    }
-
-    return undefined
-  }, [playing, track])
-
-  useEffect(() => {
-    if (!playing || track?.previewUrl) return undefined
-    const id = window.setInterval(() => {
-      setPosition((value) => (value >= 30 ? 0 : value + 0.5))
-    }, 500)
-    return () => window.clearInterval(id)
-  }, [playing, track])
-
-  if (!track) return null
-
-  return (
-    <aside className="media-player" ref={tiltRef}>
-      <canvas ref={canvasRef} />
-      {track.previewUrl ? (
-        <audio
-          ref={audioRef}
-          src={track.previewUrl}
-          crossOrigin="anonymous"
-          onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
-          onEnded={() => setPlaying(false)}
-        />
-      ) : null}
-      <img src={track.image || heroImage} alt="Album art" draggable="false" />
-      <div className="media-copy">
-        <strong>{track.title}</strong>
-        <span>{track.artist}</span>
-      </div>
-      <button type="button" className="round-btn" onClick={() => setPlaying(!playing)} aria-label="Play or pause">
-        {playing ? <Pause size={20} /> : <Play size={20} />}
-      </button>
-      <div className="media-controls">
-        <label>
-          <Volume2 size={16} />
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={(event) => setVolume(Number(event.target.value))}
-          />
-          <span>{volume}%</span>
-        </label>
-        <label>
-          <span>{formatMs(position * 1000)}</span>
-          <input
-            type="range"
-            min="0"
-            max="30"
-            step="0.1"
-            value={position}
-            onChange={(event) => {
-              const nextPosition = Number(event.target.value)
-              setPosition(nextPosition)
-              if (audioRef.current) audioRef.current.currentTime = nextPosition
-            }}
-          />
-          <span>0:30</span>
-        </label>
-      </div>
-      <button type="button" className="close-player" onClick={onClose} aria-label="Close player">
-        <X size={18} />
-      </button>
-    </aside>
-  )
-}
 
 function useRecentGames() {
   const [games, setGames] = useState([])
@@ -2415,11 +2143,10 @@ export default function App() {
   const { profile, loading } = useDiscordPresence()
   const serverStats = useServerStats()
   const siteContent = useSiteContent()
-  const [selectedTrack, setSelectedTrack] = useState(null)
   const [specsOpen, setSpecsOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(true)
   const scrollPrev = useRef(0)
-  useAccentColor(selectedTrack?.image || profile.spotify?.album_art_url)
+  useAccentColor(profile.spotify?.album_art_url)
 
   useEffect(() => {
     if (!window.matchMedia('(max-width: 620px)').matches) return
@@ -2442,7 +2169,7 @@ export default function App() {
 
   return (
     <main className="bio-shell">
-      <div className={`top-rainbow-bar${(profile.spotify || selectedTrack) ? ' top-rainbow-bar--playing' : ''}`} aria-hidden="true" />
+      <div className={`top-rainbow-bar${profile.spotify ? ' top-rainbow-bar--playing' : ''}`} aria-hidden="true" />
       <div className={`ascii-comment${navOpen ? '' : ' ascii-comment--closed'}`}>
         <span aria-hidden="true">{siteContent.ascii_comment || 'discord.gg/gogurt'}</span>
         <button onClick={e => { e.preventDefault(); navigate('/uploads') }} className="uploads-top-link">uploads</button>
@@ -2474,11 +2201,10 @@ export default function App() {
         </div>
         <div className="bottom-grid">
           <AboutCard onOpenSpecs={() => setSpecsOpen(true)} aboutBio={siteContent.about_bio} />
-          <SongsCard onSelectTrack={setSelectedTrack} />
+          <SongsCard />
         </div>
         <GamesCard />
       </section>
-      <MediaPlayer track={selectedTrack} onClose={() => setSelectedTrack(null)} />
       {specsOpen && <SpecsModal onClose={() => setSpecsOpen(false)} />}
       <HardwareWarning />
       <span className="dev-tag">made by landan</span>

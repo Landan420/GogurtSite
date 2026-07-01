@@ -28,6 +28,7 @@ import {
   Terminal,
   Ticket,
   Upload,
+  Volume2,
   X,
 } from 'lucide-react'
 import heroImage from './assets/hero.png'

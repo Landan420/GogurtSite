@@ -724,6 +724,9 @@ function useVisualizer(active, level, analyserRef) {
         peakVel = new Float32Array(bars).fill(0)
       }
 
+      const alpha = active ? 0.48 : 0.14
+      const alphaTop = active ? 0.85 : 0.22
+
       for (let index = 0; index < bars; index += 1) {
         let heightNorm
         if (freqData) {
@@ -747,27 +750,19 @@ function useVisualizer(active, level, analyserRef) {
           peaks[index] = Math.max(0, peaks[index] - peakVel[index])
         }
 
-        const height = heightNorm * h
+        const height = Math.max(1, heightNorm * h)
         const x = index * (barWidth + gap)
         const y = h - height
-        const alpha = active ? 0.55 : 0.16
 
-        const grad = context.createLinearGradient(0, y, 0, h)
-        grad.addColorStop(0, `rgba(${accentR},${accentG},${accentB},${alpha})`)
-        grad.addColorStop(1, `rgba(${accentR},${accentG},${accentB},${alpha * 0.18})`)
-        context.fillStyle = grad
-
-        const radius = Math.min(2, barWidth / 2)
-        context.beginPath()
-        if (context.roundRect) {
-          context.roundRect(x, y, barWidth, height, [radius, radius, 0, 0])
-        } else {
-          context.rect(x, y, barWidth, height)
-        }
-        context.fill()
-
+        // Body
+        context.fillStyle = `rgba(${accentR},${accentG},${accentB},${alpha})`
+        context.fillRect(x, y, barWidth, height)
+        // Bright cap (top 2px)
+        context.fillStyle = `rgba(${accentR},${accentG},${accentB},${alphaTop})`
+        context.fillRect(x, y, barWidth, Math.min(2, height))
+        // Falling peak dot
         if (active && peaks[index] > 0.06) {
-          context.fillStyle = `rgba(${accentR},${accentG},${accentB},0.8)`
+          context.fillStyle = `rgba(${accentR},${accentG},${accentB},0.82)`
           context.fillRect(x, h - peaks[index] * h - 1.5, barWidth, 2)
         }
       }

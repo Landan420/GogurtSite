@@ -636,8 +636,8 @@ function connectAnalyser(audioElement) {
       const ctx = new AudioContextClass()
       const source = ctx.createMediaElementSource(audioElement)
       const analyser = ctx.createAnalyser()
-      analyser.fftSize = 256
-      analyser.smoothingTimeConstant = 0.6
+      analyser.fftSize = 512
+      analyser.smoothingTimeConstant = 0.88
       source.connect(analyser)
       analyser.connect(ctx.destination)
       entry = { ctx, analyser }
@@ -687,11 +687,25 @@ function useVisualizer(active, level, analyserRef) {
     let frame = 0
     let animationId
     let freqData = null
+    let peaks = null
+    let peakVel = null
+    let accentR = 143, accentG = 216, accentB = 255
+
+    function readAccent() {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb') || '143,216,255'
+      const parts = v.split(',')
+      accentR = parseInt(parts[0].trim(), 10) || 143
+      accentG = parseInt(parts[1].trim(), 10) || 216
+      accentB = parseInt(parts[2].trim(), 10) || 255
+    }
+    readAccent()
 
     function draw() {
       const { w, h, ratio } = sizeRef.current
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
       context.clearRect(0, 0, w, h)
+
+      if (frame % 60 === 0) readAccent()
 
       const analyser = active ? analyserRef?.current : null
       if (analyser) {
@@ -701,32 +715,64 @@ function useVisualizer(active, level, analyserRef) {
         analyser.getByteFrequencyData(freqData)
       }
 
-      const bars = 40
-      const gap = 3
-      const barWidth = w / bars - gap
+      const bars = 64
+      const gap = 2
+      const barWidth = (w - gap * (bars - 1)) / bars
+
+      if (!peaks) {
+        peaks = new Float32Array(bars).fill(0)
+        peakVel = new Float32Array(bars).fill(0)
+      }
+
       for (let index = 0; index < bars; index += 1) {
-        let height
+        let heightNorm
         if (freqData) {
-          // Most musical energy lives in the lower ~70% of the spectrum, so
-          // restrict sampling to that range or the upper bars read near-silence.
-          const usableBins = Math.max(1, Math.floor(freqData.length * 0.7))
+          const usableBins = Math.max(1, Math.floor(freqData.length * 0.72))
           const t = index / (bars - 1)
           const bin = Math.min(usableBins - 1, Math.floor(t * usableBins))
           const raw = freqData[bin] / 255
-          const boosted = Math.pow(raw, 0.6) * (0.85 + t * 0.5)
-          height = Math.max(0.07, Math.min(1, boosted)) * h * level
+          const boosted = Math.pow(raw, 0.55) * (0.82 + t * 0.45)
+          heightNorm = Math.max(0.04, Math.min(1, boosted)) * level
         } else {
-          const wave = Math.sin(frame * 0.035 + index * 0.65)
-          const jitter = Math.cos(frame * 0.02 + index * 0.21)
-          height = (0.16 + Math.abs(wave) * 0.7 + jitter * 0.08) * h * level
+          const wave = Math.sin(frame * 0.028 + index * 0.58)
+          const jitter = Math.cos(frame * 0.016 + index * 0.19)
+          heightNorm = (0.12 + Math.abs(wave) * 0.62 + jitter * 0.06) * level
         }
+
+        if (heightNorm >= peaks[index]) {
+          peaks[index] = heightNorm
+          peakVel[index] = 0
+        } else {
+          peakVel[index] += 0.0005
+          peaks[index] = Math.max(0, peaks[index] - peakVel[index])
+        }
+
+        const height = heightNorm * h
         const x = index * (barWidth + gap)
         const y = h - height
-        context.fillStyle = `rgba(${180 + index}, ${220 - index}, 255, ${active ? 0.28 : 0.12})`
-        context.fillRect(x, y, barWidth, height)
+        const alpha = active ? 0.55 : 0.16
+
+        const grad = context.createLinearGradient(0, y, 0, h)
+        grad.addColorStop(0, `rgba(${accentR},${accentG},${accentB},${alpha})`)
+        grad.addColorStop(1, `rgba(${accentR},${accentG},${accentB},${alpha * 0.18})`)
+        context.fillStyle = grad
+
+        const radius = Math.min(2, barWidth / 2)
+        context.beginPath()
+        if (context.roundRect) {
+          context.roundRect(x, y, barWidth, height, [radius, radius, 0, 0])
+        } else {
+          context.rect(x, y, barWidth, height)
+        }
+        context.fill()
+
+        if (active && peaks[index] > 0.06) {
+          context.fillStyle = `rgba(${accentR},${accentG},${accentB},0.8)`
+          context.fillRect(x, h - peaks[index] * h - 1.5, barWidth, 2)
+        }
       }
 
-      frame += active ? 1 : 0.18
+      frame += active ? 1 : 0.15
       animationId = window.requestAnimationFrame(draw)
     }
 
@@ -737,12 +783,148 @@ function useVisualizer(active, level, analyserRef) {
   return canvasRef
 }
 
+const PARTICLE_COUNT = 65
+
+function drawStar(ctx, x, y, r, angle) {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(angle)
+  ctx.beginPath()
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4
+    const rad = i % 2 === 0 ? r : r * 0.42
+    if (i === 0) ctx.moveTo(rad * Math.cos(a), rad * Math.sin(a))
+    else ctx.lineTo(rad * Math.cos(a), rad * Math.sin(a))
+  }
+  ctx.closePath()
+  ctx.fill()
+  ctx.restore()
+}
+
+function drawSparkle(ctx, x, y, r, angle) {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(angle)
+  ctx.beginPath()
+  ctx.moveTo(0, -r);    ctx.lineTo(0, r)
+  ctx.moveTo(-r, 0);    ctx.lineTo(r, 0)
+  ctx.moveTo(-r * 0.65, -r * 0.65); ctx.lineTo(r * 0.65, r * 0.65)
+  ctx.moveTo(r * 0.65, -r * 0.65);  ctx.lineTo(-r * 0.65, r * 0.65)
+  ctx.stroke()
+  ctx.restore()
+}
+
+function ParticleCanvas({ type }) {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (type === 'none') return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let animId
+    let w = window.innerWidth
+    let h = window.innerHeight
+    let accentR = 143, accentG = 216, accentB = 255
+    let colorFrame = 0
+
+    function resize() {
+      const ratio = window.devicePixelRatio || 1
+      w = window.innerWidth
+      h = window.innerHeight
+      canvas.width = Math.floor(w * ratio)
+      canvas.height = Math.floor(h * ratio)
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+    }
+    resize()
+    window.addEventListener('resize', resize, { passive: true })
+
+    function readAccent() {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb') || '143,216,255'
+      const parts = v.split(',')
+      accentR = parseInt(parts[0].trim(), 10) || 143
+      accentG = parseInt(parts[1].trim(), 10) || 216
+      accentB = parseInt(parts[2].trim(), 10) || 255
+    }
+    readAccent()
+
+    const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: -(Math.random() * 0.26 + 0.06),
+      alpha: Math.random() * 0.32 + 0.06,
+      spin: Math.random() * Math.PI * 2,
+      spinSpeed: (Math.random() - 0.5) * 0.022,
+      phase: Math.random() * Math.PI * 2,
+    }))
+
+    function draw() {
+      colorFrame++
+      if (colorFrame % 90 === 0) readAccent()
+      ctx.clearRect(0, 0, w, h)
+
+      for (const p of particles) {
+        p.x += p.vx + Math.sin(p.phase) * 0.07
+        p.y += p.vy
+        p.spin += p.spinSpeed
+        p.phase += 0.007
+        if (p.y < -20) { p.y = h + 10; p.x = Math.random() * w }
+        if (p.x < -20) p.x = w + 20
+        if (p.x > w + 20) p.x = -20
+
+        ctx.globalAlpha = p.alpha
+        if (type === 'dots') {
+          ctx.fillStyle = `rgb(${accentR},${accentG},${accentB})`
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+          ctx.fill()
+        } else if (type === 'stars') {
+          ctx.fillStyle = `rgb(${accentR},${accentG},${accentB})`
+          drawStar(ctx, p.x, p.y, p.r * 2.8, p.spin)
+        } else if (type === 'sparkles') {
+          ctx.strokeStyle = `rgb(${accentR},${accentG},${accentB})`
+          ctx.lineWidth = 0.85
+          drawSparkle(ctx, p.x, p.y, p.r * 3.2, p.spin)
+        }
+      }
+      ctx.globalAlpha = 1
+      animId = requestAnimationFrame(draw)
+    }
+
+    draw()
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [type])
+
+  if (type === 'none') return null
+  return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />
+}
+
+function CopyToast({ visible, message }) {
+  return (
+    <div className={`copy-toast${visible ? '' : ' copy-toast--hidden'}`} aria-live="polite">
+      {message}
+    </div>
+  )
+}
+
 function UploadsPage() {
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [viewingId, setViewingId] = useState(null)
-  const [copiedId, setCopiedId] = useState(null)
+  const [toast, setToast] = useState({ msg: '', show: false })
+  const toastTimer = useRef(null)
   const { profile: discordProfile } = useDiscordPresence()
+
+  function showToast(msg) {
+    clearTimeout(toastTimer.current)
+    setToast({ msg, show: true })
+    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, show: false })), 1800)
+  }
   useAccentColor(discordProfile?.spotify?.album_art_url)
 
   useEffect(() => {
@@ -767,8 +949,7 @@ function UploadsPage() {
       ? `loadstring(game:HttpGet("${rawUrl(file)}"))()`
       : rawUrl(file)
     navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(file.id)
-      setTimeout(() => setCopiedId(null), 1800)
+      showToast(file.ext === 'lua' ? 'loadstring copied!' : 'link copied!')
     })
   }
 
@@ -786,7 +967,6 @@ function UploadsPage() {
           {files.map(f => {
             const pt = previewType(f.ext)
             const isOpen = viewingId === f.id
-            const isCopied = copiedId === f.id
             return (
               <div key={f.id} className="upload-item-wrap">
                 <div
@@ -802,10 +982,10 @@ function UploadsPage() {
                   <div className="upload-item-actions">
                     <button
                       type="button"
-                      className={`upload-item-copy${isCopied ? ' upload-item-copy--done' : ''}`}
+                      className="upload-item-copy"
                       onClick={e => { e.stopPropagation(); copyRaw(f) }}
                       title={f.ext === 'lua' ? 'Copy loadstring' : 'Copy link'}
-                    >{isCopied ? '✓' : '⎘'}</button>
+                    >⎘</button>
                     {pt !== 'none' && <span className="upload-item-chevron" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>}
                     <button type="button" className="upload-item-dl" onClick={e => { e.stopPropagation(); download(f) }} title="Download">↓</button>
                   </div>
@@ -818,7 +998,7 @@ function UploadsPage() {
                     <div className="upload-preview-rawbar">
                       <span className="uprb-label">{f.ext === 'lua' ? 'exec' : 'raw'}</span>
                       <code className="uprb-url">{f.ext === 'lua' ? `loadstring(game:HttpGet("${rawUrl(f)}"))()`  : rawUrl(f)}</code>
-                      <button type="button" className={`uprb-copy${isCopied ? ' uprb-copy--done' : ''}`} onClick={() => copyRaw(f)}>{isCopied ? '✓' : '⎘'}</button>
+                      <button type="button" className="uprb-copy" onClick={() => copyRaw(f)}>⎘</button>
                     </div>
                     <button type="button" className="upload-preview-dl" onClick={() => download(f)}>↓ download {f.name}</button>
                   </div>
@@ -828,6 +1008,7 @@ function UploadsPage() {
           })}
         </div>
       </div>
+      <CopyToast visible={toast.show} message={toast.msg} />
       <span className="dev-tag">made by landan</span>
     </main>
   )
@@ -853,7 +1034,20 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
       </div>
       <section className="profile-card">
         <img className="profile-banner" src={profile.bannerUrl || crewPhoto} alt="" draggable="false" />
-        {loading ? <div className="loading-overlay">Loading..</div> : null}
+        {loading ? (
+          <div className="loading-overlay">
+            <div className="loading-skel-row">
+              <div className="skel skel--circle" style={{ width: 64, height: 64 }} />
+              <div className="loading-skel-lines">
+                <div className="skel" style={{ height: 17, width: 130 }} />
+                <div className="skel" style={{ height: 13, width: 90 }} />
+              </div>
+            </div>
+            <div className="skel" style={{ height: 13, width: '75%' }} />
+            <div className="skel" style={{ height: 13, width: '55%' }} />
+            <div className="skel" style={{ height: 13, width: '65%' }} />
+          </div>
+        ) : null}
         <div className="profile-main">
           <div className="avatar-wrap">
             <img className="avatar" src={profile.avatarUrl} alt="Profile" draggable="false" />
@@ -1174,7 +1368,18 @@ function SongsCard({ onSelectTrack }) {
         </div>
       </div>
       <div className="song-list" key={mode}>
-        {statsLoading ? <div className="song-empty">Loading streams..</div> : null}
+        {statsLoading ? Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="song-row song-row--skeleton" style={{ '--i': i }}>
+            <div className="skel" style={{ height: 14, width: 18 }} />
+            <div className="skel skel--circle" style={{ width: 44, height: 44 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="skel" style={{ height: 13, width: `${55 + i * 7}%` }} />
+              <div className="skel" style={{ height: 11, width: `${30 + i * 5}%` }} />
+            </div>
+            <div className="skel" style={{ height: 12, width: 38 }} />
+            <div className="skel" style={{ height: 12, width: 54 }} />
+          </div>
+        )) : null}
         {statsError && !statsLoading ? <div className="song-empty">stats.fm unavailable. Showing fallback songs.</div> : null}
         {songs.map((song, index) => (
           <article key={`${song.title}-${song.endTime || song.rank || index}`} className="song-row">
@@ -2122,6 +2327,28 @@ function AdminPanel() {
             />
           </label>
 
+          <p className="admin-section-label">particles</p>
+          <div className="admin-field">
+            <span>background style</span>
+            <div className="particle-picker">
+              {[
+                { id: 'none',     label: '— none'      },
+                { id: 'dots',     label: '● dots'      },
+                { id: 'stars',    label: '✦ stars'     },
+                { id: 'sparkles', label: '✧ sparkles'  },
+              ].map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`style-picker-btn${(content.particles ?? 'dots') === id ? ' active' : ''}`}
+                  onClick={() => setContent(c => ({ ...c, particles: id }))}
+                >
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <p className="admin-section-label">bio</p>
 
           <div className="admin-field">
@@ -2219,6 +2446,7 @@ export default function App() {
         </button>
       </div>
       <div className="page-backdrop" />
+      <ParticleCanvas type={siteContent.particles ?? 'dots'} />
       <section className="bio-container">
         <div className="top-grid">
           <ProfileCard

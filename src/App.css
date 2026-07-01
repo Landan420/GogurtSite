@@ -18,6 +18,38 @@
   --accent-rgb: 143, 216, 255;
 }
 
+/* ── scrollbar ─────────────────────────────────── */
+html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.28); border-radius: 3px; transition: background 0.3s; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.55); }
+
+/* ── particle canvas ────────────────────────────── */
+.particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── skeleton shimmer ───────────────────────────── */
+.skel {
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05) 0%,
+    rgba(255,255,255,0.11) 45%,
+    rgba(255,255,255,0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.skel--circle { border-radius: 50%; }
+
 .bio-shell {
   position: relative;
   min-height: 100vh;
@@ -314,12 +346,25 @@
   position: absolute;
   inset: 0;
   z-index: 4;
-  display: grid;
-  place-items: center;
-  background: rgba(5, 6, 8, 0.58);
-  color: var(--text);
-  font-family: var(--mono);
-  animation: fadeOut 800ms 420ms ease forwards;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 58px 18px 18px;
+  background: rgba(5, 6, 8, 0.72);
+  border-radius: inherit;
+  animation: fadeOut 700ms 800ms ease forwards;
+  pointer-events: none;
+}
+.loading-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.loading-skel-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
 }
 
 .profile-main {
@@ -1945,6 +1990,43 @@ a {
   color: var(--text-soft);
   font-family: var(--mono);
   font-size: 12px;
+}
+
+.song-row--skeleton {
+  pointer-events: none;
+}
+.song-row--skeleton .skel {
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+/* ── copy toast ─────────────────────────────────── */
+.copy-toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 999;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  color: rgb(var(--accent-rgb));
+  font-family: var(--mono);
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+.copy-toast--hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+/* ── admin particle picker ───────────────────────── */
+.particle-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .media-player {

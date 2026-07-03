@@ -2,6 +2,7 @@ const ALLOWED_KEYS = [
   'custom_status', 'location', 'about_bio',
   'custom_name', 'custom_handle', 'ascii_comment', 'name_style',
   'custom_avatar_url', 'custom_banner_url',
+  'particles', 'socials',
 ]
 
 function json(data, init = {}) {

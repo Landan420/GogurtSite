@@ -5,6 +5,8 @@ import { DEFAULT_ACCENT, extractDominantColor, animateAccent, useAccentColor } f
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   CircuitBoard,
   Clock3,
   Code2,
@@ -18,15 +20,18 @@ import {
   HardDrive,
   Headphones,
   Keyboard,
+  Link as LinkIcon,
   MemoryStick,
   Monitor,
   Mouse,
+  Music2,
   Plus,
   RefreshCw,
   Search,
   Smartphone,
   Terminal,
   Ticket,
+  Trash2,
   Upload,
   Volume2,
   X,
@@ -140,12 +145,73 @@ function RobloxIcon({ size = 18 }) {
   )
 }
 
+function XTwitterIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z" />
+    </svg>
+  )
+}
+
+function YoutubeIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M23.5 6.19a3.02 3.02 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.509A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.123 2.136c1.872.509 9.377.509 9.377.509s7.505 0 9.377-.509A3.02 3.02 0 0 0 23.5 17.81C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  )
+}
+
+function TwitchIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
+    </svg>
+  )
+}
+
 const socials = [
   { label: 'Instagram', href: 'https://instagram.com/Landanmo', icon: InstagramIcon, cls: 'social-badge--instagram' },
   { label: 'Discord', href: 'https://discord.gg/gogurt', icon: DiscordIcon, cls: 'social-badge--discord' },
   { label: 'GitHub', href: 'https://github.com/Landan420', icon: GitHubIcon, cls: 'social-badge--github' },
   { label: 'Roblox', href: 'https://www.roblox.com/users/3730395803/profile', icon: RobloxIcon, cls: 'social-badge--roblox' },
 ]
+
+const SOCIAL_PLATFORMS = [
+  { match: ['instagram.com'], icon: InstagramIcon, cls: 'social-badge--instagram' },
+  { match: ['discord.gg', 'discord.com'], icon: DiscordIcon, cls: 'social-badge--discord' },
+  { match: ['github.com'], icon: GitHubIcon, cls: 'social-badge--github' },
+  { match: ['roblox.com'], icon: RobloxIcon, cls: 'social-badge--roblox' },
+  { match: ['twitter.com', 'x.com'], icon: XTwitterIcon, cls: 'social-badge--twitter' },
+  { match: ['youtube.com', 'youtu.be'], icon: YoutubeIcon, cls: 'social-badge--youtube' },
+  { match: ['twitch.tv'], icon: TwitchIcon, cls: 'social-badge--twitch' },
+  { match: ['steamcommunity.com', 'steampowered.com'], icon: SteamIcon, cls: 'social-badge--steam' },
+  { match: ['spotify.com'], icon: SpotifyGlyph, cls: 'social-badge--spotify' },
+  { match: ['tiktok.com'], icon: Music2, cls: 'social-badge--tiktok' },
+]
+
+function detectSocialPlatform(href) {
+  let host = ''
+  try { host = new URL(href).hostname.replace(/^www\./, '') } catch {}
+  for (const platform of SOCIAL_PLATFORMS) {
+    if (platform.match.some(d => host === d || host.endsWith(`.${d}`))) return platform
+  }
+  return { icon: LinkIcon, cls: 'social-badge--generic' }
+}
+
+function parseCustomSocials(raw) {
+  if (!raw) return null
+  try {
+    const list = JSON.parse(raw)
+    if (!Array.isArray(list)) return null
+    const cleaned = list
+      .filter(s => s && typeof s.href === 'string' && s.href.trim())
+      .map(s => {
+        const { icon, cls } = detectSocialPlatform(s.href)
+        return { label: String(s.label || '').trim() || 'link', href: s.href.trim(), icon, cls }
+      })
+    return cleaned.length > 0 ? cleaned : null
+  } catch { return null }
+}
 
 const recentTracks = [
   {
@@ -291,6 +357,27 @@ function normalizeStatsTrack(item, index) {
     plays: item.streams,
     vibe: item.platform ? item.platform.toLowerCase() : 'spotify',
     repeatCount: 1,
+  }
+}
+
+function normalizeStatsArtist(item, index) {
+  const artist = item.artist ?? item
+  const spotifyId = artist.externalIds?.spotify?.[0]
+  return {
+    name: artist.name || 'Unknown artist',
+    image: artist.image || heroImage,
+    spotifyId,
+    plays: item.streams,
+    rank: item.position || index + 1,
+  }
+}
+
+function normalizeStatsGenre(item, index) {
+  const genre = item.genre ?? item
+  return {
+    name: genre.tag || 'Unknown genre',
+    plays: item.streams,
+    rank: item.position || index + 1,
   }
 }
 
@@ -576,8 +663,10 @@ function useTilt(maxDeg = 2.5) {
     const timer = setTimeout(() => { enabled = true }, 1400)
 
     function onMove(e) {
-      if (!enabled) return
       const rect = el.getBoundingClientRect()
+      el.style.setProperty('--mx', `${(e.clientX - rect.left).toFixed(0)}px`)
+      el.style.setProperty('--my', `${(e.clientY - rect.top).toFixed(0)}px`)
+      if (!enabled) return
       const x = (e.clientX - rect.left) / rect.width - 0.5
       const y = (e.clientY - rect.top) / rect.height - 0.5
       el.style.transform = `perspective(900px) rotateY(${(x * maxDeg * 2).toFixed(2)}deg) rotateX(${(-y * maxDeg * 2).toFixed(2)}deg)`
@@ -623,6 +712,19 @@ function useServerStats() {
 }
 
 const PARTICLE_COUNT = 65
+
+const PARTICLE_STYLES = [
+  { id: 'none',      label: '— none'       },
+  { id: 'dots',      label: '● dots'       },
+  { id: 'stars',     label: '✦ stars'      },
+  { id: 'sparkles',  label: '✧ sparkles'   },
+  { id: 'snow',      label: '❄ snow'       },
+  { id: 'fireflies', label: '✺ fireflies'  },
+  { id: 'matrix',    label: '字 matrix'     },
+  { id: 'aurora',    label: '〜 aurora'     },
+]
+
+const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ01'
 
 function drawStar(ctx, x, y, r, angle) {
   ctx.save()
@@ -687,45 +789,169 @@ function ParticleCanvas({ type }) {
     }
     readAccent()
 
-    const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 1.8 + 0.4,
-      vx: (Math.random() - 0.5) * 0.18,
-      vy: -(Math.random() * 0.26 + 0.06),
-      alpha: Math.random() * 0.32 + 0.06,
-      spin: Math.random() * Math.PI * 2,
-      spinSpeed: (Math.random() - 0.5) * 0.022,
-      phase: Math.random() * Math.PI * 2,
-    }))
+    let particles = []
+    let columns = []
+    let blobs = []
+
+    function initScene() {
+      if (type === 'matrix') {
+        const colWidth = 22
+        columns = Array.from({ length: Math.ceil(w / colWidth) }, (_, i) => ({
+          x: i * colWidth + colWidth / 2,
+          y: Math.random() * h * -1.5,
+          speed: Math.random() * 1.6 + 0.9,
+          len: Math.floor(Math.random() * 8) + 7,
+          chars: Array.from({ length: 15 }, () => MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]),
+        }))
+      } else if (type === 'aurora') {
+        blobs = Array.from({ length: 4 }, (_, i) => ({
+          cx: Math.random(),
+          cy: Math.random() * 0.7,
+          radius: 0.34 + Math.random() * 0.22,
+          phase: Math.random() * Math.PI * 2,
+          drift: 0.0016 + Math.random() * 0.0014,
+          shift: i % 3,
+          alpha: 0.055 + Math.random() * 0.035,
+        }))
+      } else {
+        const count =
+          type === 'fireflies' ? 22
+          : type === 'snow' ? 85
+          : PARTICLE_COUNT
+        particles = Array.from({ length: count }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: type === 'snow' ? Math.random() * 2.1 + 0.7
+            : type === 'fireflies' ? Math.random() * 1.6 + 1.2
+            : Math.random() * 1.8 + 0.4,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: type === 'snow' ? Math.random() * 0.7 + 0.28 : -(Math.random() * 0.26 + 0.06),
+          alpha: type === 'snow' ? Math.random() * 0.45 + 0.22 : Math.random() * 0.32 + 0.06,
+          spin: Math.random() * Math.PI * 2,
+          spinSpeed: (Math.random() - 0.5) * 0.022,
+          phase: Math.random() * Math.PI * 2,
+          wanderAngle: Math.random() * Math.PI * 2,
+        }))
+      }
+    }
+    initScene()
+
+    // matrix columns depend on width — rebuild them on resize
+    const baseResize = resize
+    function resizeScene() {
+      baseResize()
+      if (type === 'matrix') initScene()
+    }
+    window.removeEventListener('resize', resize)
+    window.addEventListener('resize', resizeScene, { passive: true })
+
+    // aurora shifts channels for two companion hues so the glow isn't flat
+    function blobColor(shift) {
+      if (shift === 1) return [accentG, accentB, accentR]
+      if (shift === 2) return [accentB, accentR, accentG]
+      return [accentR, accentG, accentB]
+    }
 
     function draw() {
       colorFrame++
       if (colorFrame % 90 === 0) readAccent()
       ctx.clearRect(0, 0, w, h)
 
+      if (type === 'aurora') {
+        for (const b of blobs) {
+          b.phase += b.drift
+          const x = (b.cx + Math.sin(b.phase) * 0.18) * w
+          const y = (b.cy + Math.cos(b.phase * 0.8) * 0.14) * h
+          const radius = b.radius * Math.max(w, h)
+          const [r, g, bl] = blobColor(b.shift)
+          const grad = ctx.createRadialGradient(x, y, 0, x, y, radius)
+          grad.addColorStop(0, `rgba(${r},${g},${bl},${b.alpha})`)
+          grad.addColorStop(1, `rgba(${r},${g},${bl},0)`)
+          ctx.fillStyle = grad
+          ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+        }
+        animId = requestAnimationFrame(draw)
+        return
+      }
+
+      if (type === 'matrix') {
+        ctx.font = '13px monospace'
+        ctx.textAlign = 'center'
+        for (const col of columns) {
+          col.y += col.speed
+          const headRow = Math.floor(col.y / 16)
+          for (let i = 0; i < col.len; i++) {
+            const cy = (headRow - i) * 16
+            if (cy < -20 || cy > h + 20) continue
+            const fade = 1 - i / col.len
+            if (i === 0) {
+              ctx.fillStyle = `rgba(235,255,245,${0.85 * fade})`
+            } else {
+              ctx.fillStyle = `rgba(${accentR},${accentG},${accentB},${0.55 * fade})`
+            }
+            ctx.fillText(col.chars[(headRow - i + 150) % col.chars.length], col.x, cy)
+          }
+          if ((headRow - col.len) * 16 > h + 20) {
+            col.y = Math.random() * -300
+            col.speed = Math.random() * 1.6 + 0.9
+          }
+        }
+        animId = requestAnimationFrame(draw)
+        return
+      }
+
       for (const p of particles) {
-        p.x += p.vx + Math.sin(p.phase) * 0.07
-        p.y += p.vy
-        p.spin += p.spinSpeed
-        p.phase += 0.007
+        if (type === 'fireflies') {
+          p.wanderAngle += (Math.random() - 0.5) * 0.18
+          p.x += Math.cos(p.wanderAngle) * 0.34
+          p.y += Math.sin(p.wanderAngle) * 0.34
+          p.phase += 0.025
+        } else {
+          p.x += p.vx + Math.sin(p.phase) * (type === 'snow' ? 0.22 : 0.07)
+          p.y += p.vy
+          p.spin += p.spinSpeed
+          p.phase += 0.007
+        }
         if (p.y < -20) { p.y = h + 10; p.x = Math.random() * w }
+        if (p.y > h + 20) { p.y = -10; p.x = Math.random() * w }
         if (p.x < -20) p.x = w + 20
         if (p.x > w + 20) p.x = -20
 
-        ctx.globalAlpha = p.alpha
         if (type === 'dots') {
+          ctx.globalAlpha = p.alpha
           ctx.fillStyle = `rgb(${accentR},${accentG},${accentB})`
           ctx.beginPath()
           ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
           ctx.fill()
         } else if (type === 'stars') {
+          ctx.globalAlpha = p.alpha
           ctx.fillStyle = `rgb(${accentR},${accentG},${accentB})`
           drawStar(ctx, p.x, p.y, p.r * 2.8, p.spin)
         } else if (type === 'sparkles') {
+          ctx.globalAlpha = p.alpha
           ctx.strokeStyle = `rgb(${accentR},${accentG},${accentB})`
           ctx.lineWidth = 0.85
           drawSparkle(ctx, p.x, p.y, p.r * 3.2, p.spin)
+        } else if (type === 'snow') {
+          ctx.globalAlpha = p.alpha
+          ctx.fillStyle = `rgba(240, 246, 255, 0.95)`
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+          ctx.fill()
+        } else if (type === 'fireflies') {
+          const pulse = 0.35 + 0.65 * (0.5 + Math.sin(p.phase) * 0.5)
+          const glowR = p.r * 6
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR)
+          grad.addColorStop(0, `rgba(${accentR},${accentG},${accentB},${0.5 * pulse})`)
+          grad.addColorStop(1, `rgba(${accentR},${accentG},${accentB},0)`)
+          ctx.globalAlpha = 1
+          ctx.fillStyle = grad
+          ctx.fillRect(p.x - glowR, p.y - glowR, glowR * 2, glowR * 2)
+          ctx.globalAlpha = 0.9 * pulse
+          ctx.fillStyle = `rgb(${accentR},${accentG},${accentB})`
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.r * 0.8, 0, Math.PI * 2)
+          ctx.fill()
         }
       }
       ctx.globalAlpha = 1
@@ -735,7 +961,7 @@ function ParticleCanvas({ type }) {
     draw()
     return () => {
       cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
+      window.removeEventListener('resize', resizeScene)
     }
   }, [type])
 
@@ -888,7 +1114,7 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
           </div>
         ) : null}
         <div className="profile-main">
-          <div className="avatar-wrap">
+          <div className={`avatar-wrap${profile.spotify ? ' avatar-wrap--playing' : ''}`}>
             <img className="avatar" src={profile.avatarUrl} alt="Profile" draggable="false" />
           </div>
           <div className="name-block">
@@ -1096,19 +1322,20 @@ function SpecsModal({ onClose }) {
   )
 }
 
-function AboutCard({ onOpenSpecs, aboutBio }) {
+function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
   const tiltRef = useTilt()
   const hasText = aboutBio && aboutBio.replace(/<[^>]*>/g, '').trim().length > 0
   const bioHtml = (hasText ? aboutBio : DEFAULT_BIO)
     .replace(/<div>\s*<h3>\s*My Specs\s*<\/h3>\s*<\/div>/gi, '')
     .replace(/<h3>\s*My Specs\s*<\/h3>/gi, '')
+  const badgeList = useMemo(() => parseCustomSocials(customSocials) || socials, [customSocials])
   return (
     <section className="section-card about-card" ref={tiltRef}>
       <div className="section-title-row">
         <h2>About Me</h2>
         <div className="social-badges">
-          {socials.map(({ label, href, icon: Icon, cls }) => (
-            <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className={`profile-badge ${cls}`}>
+          {badgeList.map(({ label, href, icon: Icon, cls }) => (
+            <a key={`${label}-${href}`} href={href} target="_blank" rel="noreferrer" aria-label={label} className={`profile-badge ${cls}`}>
               <Icon size={12} />
               <span className="badge-label">{label}</span>
             </a>
@@ -1127,22 +1354,44 @@ function AboutCard({ onOpenSpecs, aboutBio }) {
   )
 }
 
+const SONGS_TABS = [
+  { key: 'recent', label: 'Recent' },
+  { key: 'top', label: 'Tracks' },
+  { key: 'artists', label: 'Artists' },
+  { key: 'genres', label: 'Genres' },
+]
+
+const SONGS_MODE_TITLE = {
+  recent: 'Recent Streams',
+  top: 'Top Streams',
+  artists: 'Top Artists',
+  genres: 'Top Genres',
+}
+
 function SongsCard() {
   const tiltRef = useTilt()
   const [mode, setMode] = useState('recent')
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [statsSongs, setStatsSongs] = useState([])
+  const [statsArtists, setStatsArtists] = useState([])
+  const [statsGenres, setStatsGenres] = useState([])
   const [statsLoading, setStatsLoading] = useState(true)
   const [statsError, setStatsError] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
-    const endpoint =
-      mode === 'recent'
-        ? `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/streams/recent`
-        : `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/top/tracks?range=lifetime`
+    let endpoint
+    if (mode === 'recent') {
+      endpoint = `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/streams/recent`
+    } else if (mode === 'top') {
+      endpoint = `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/top/tracks?range=lifetime`
+    } else if (mode === 'artists') {
+      endpoint = `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/top/artists?range=lifetime`
+    } else {
+      endpoint = `https://api.stats.fm/api/v1/users/${STATS_FM_ID}/top/genres?range=lifetime`
+    }
 
     setStatsLoading(true)
     setStatsError(false)
@@ -1154,12 +1403,20 @@ function SongsCard() {
       })
       .then((payload) => {
         if (cancelled) return
-        setStatsSongs((payload.items || []).slice(0, 40).map(normalizeStatsTrack))
+        if (mode === 'artists') {
+          setStatsArtists((payload.items || []).slice(0, 40).map(normalizeStatsArtist))
+        } else if (mode === 'genres') {
+          setStatsGenres((payload.items || []).slice(0, 40).map(normalizeStatsGenre))
+        } else {
+          setStatsSongs((payload.items || []).slice(0, 40).map(normalizeStatsTrack))
+        }
       })
       .catch(() => {
         if (!cancelled) {
           setStatsError(true)
-          setStatsSongs([])
+          if (mode === 'artists') setStatsArtists([])
+          else if (mode === 'genres') setStatsGenres([])
+          else setStatsSongs([])
         }
       })
       .finally(() => {
@@ -1172,6 +1429,7 @@ function SongsCard() {
   }, [mode, refreshKey])
 
   const songs = useMemo(() => {
+    if (mode === 'artists' || mode === 'genres') return []
     const source =
       statsSongs.length > 0
         ? statsSongs
@@ -1197,78 +1455,145 @@ function SongsCard() {
     window.setTimeout(() => setRefreshing(false), 650)
   }
 
+  const isTrackMode = mode === 'recent' || mode === 'top'
+
   return (
     <section className="section-card songs-card" ref={tiltRef}>
       <div className="section-title-row">
-        <h2>
-          <button type="button" className="title-toggle" onClick={() => setMode(mode === 'recent' ? 'top' : 'recent')}>
-            {mode === 'recent' ? 'Recent' : 'Top'}
-          </button>{' '}
-          Streams
-        </h2>
+        <h2>{SONGS_MODE_TITLE[mode]}</h2>
         <div className="song-controls">
-          <label className="search-box">
-            <Search size={14} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search.." />
-            {query ? (
-              <button type="button" onClick={() => setQuery('')} aria-label="Clear search">
-                <X size={13} />
+          <div className="songs-mode-tabs">
+            {SONGS_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={mode === tab.key ? 'songs-tab--active' : ''}
+                onClick={() => { setMode(tab.key); setQuery('') }}
+              >
+                {tab.label}
               </button>
-            ) : null}
-          </label>
+            ))}
+          </div>
+          {isTrackMode ? (
+            <label className="search-box">
+              <Search size={14} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search.." />
+              {query ? (
+                <button type="button" onClick={() => setQuery('')} aria-label="Clear search">
+                  <X size={13} />
+                </button>
+              ) : null}
+            </label>
+          ) : null}
           <button type="button" onClick={refresh} className={refreshing ? 'spinning' : ''} aria-label="Refresh songs">
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
-      <div className="song-list" key={mode}>
-        {statsLoading ? Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="song-row song-row--skeleton" style={{ '--i': i }}>
-            <div className="skel" style={{ height: 14, width: 18 }} />
-            <div className="skel skel--circle" style={{ width: 44, height: 44 }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div className="skel" style={{ height: 13, width: `${55 + i * 7}%` }} />
-              <div className="skel" style={{ height: 11, width: `${30 + i * 5}%` }} />
-            </div>
-            <div className="skel" style={{ height: 12, width: 38 }} />
-            <div className="skel" style={{ height: 12, width: 54 }} />
-          </div>
-        )) : null}
-        {statsError && !statsLoading ? <div className="song-empty">stats.fm unavailable. Showing fallback songs.</div> : null}
-        {songs.map((song, index) => (
-          <article key={`${song.title}-${song.endTime || song.rank || index}`} className="song-row">
-            <div className="song-index">{pad(index + 1)}</div>
-            <div className="song-art-wrap">
-              <img className="song-art" src={song.image || heroImage} alt="" draggable="false" loading="lazy" />
-            </div>
-            <div>
-              <div className="song-title-line">
-                {song.spotifyId ? (
-                  <a href={`https://open.spotify.com/track/${song.spotifyId}`} target="_blank" rel="noreferrer">
-                    <strong>{song.title}</strong>
-                  </a>
-                ) : (
-                  <strong>{song.title}</strong>
-                )}
-                {song.repeatCount > 1 ? <b className="repeat-count">x{song.repeatCount}</b> : null}
+
+      {isTrackMode ? (
+        <div className="song-list" key={mode}>
+          {statsLoading ? Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="song-row song-row--skeleton" style={{ '--i': i }}>
+              <div className="skel" style={{ height: 14, width: 18 }} />
+              <div className="skel skel--circle" style={{ width: 44, height: 44 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="skel" style={{ height: 13, width: `${55 + i * 7}%` }} />
+                <div className="skel" style={{ height: 11, width: `${30 + i * 5}%` }} />
               </div>
-              <span>
-                {song.artist} - {song.album}
-              </span>
+              <div className="skel" style={{ height: 12, width: 38 }} />
+              <div className="skel" style={{ height: 12, width: 54 }} />
             </div>
-            <small>
-              {mode === 'recent'
-                ? formatRelativeTime(song.endTime)
-                : song.plays
-                  ? `${song.plays} plays`
-                  : `#${song.rank}`}
-            </small>
-            <em title={song.vibe}>
-              <SpotifyGlyph size={18} />
-            </em>
-          </article>
-        ))}
-      </div>
+          )) : null}
+          {statsError && !statsLoading ? <div className="song-empty">stats.fm unavailable. Showing fallback songs.</div> : null}
+          {songs.map((song, index) => (
+            <article key={`${song.title}-${song.endTime || song.rank || index}`} className="song-row">
+              <div className="song-index">{pad(index + 1)}</div>
+              <div className="song-art-wrap">
+                <img className="song-art" src={song.image || heroImage} alt="" draggable="false" loading="lazy" />
+              </div>
+              <div>
+                <div className="song-title-line">
+                  {song.spotifyId ? (
+                    <a href={`https://open.spotify.com/track/${song.spotifyId}`} target="_blank" rel="noreferrer">
+                      <strong>{song.title}</strong>
+                    </a>
+                  ) : (
+                    <strong>{song.title}</strong>
+                  )}
+                  {song.repeatCount > 1 ? <b className="repeat-count">x{song.repeatCount}</b> : null}
+                </div>
+                <span>
+                  {song.artist} - {song.album}
+                </span>
+              </div>
+              <small>
+                {mode === 'recent'
+                  ? formatRelativeTime(song.endTime)
+                  : song.plays
+                    ? `${song.plays} plays`
+                    : `#${song.rank}`}
+              </small>
+              <em title={song.vibe}>
+                <SpotifyGlyph size={18} />
+              </em>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {mode === 'artists' ? (
+        <div className="song-list" key="artists">
+          {statsLoading ? Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="song-row song-row--skeleton" style={{ '--i': i }}>
+              <div className="skel" style={{ height: 14, width: 18 }} />
+              <div className="skel skel--circle" style={{ width: 44, height: 44 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className="skel" style={{ height: 13, width: `${55 + i * 7}%` }} />
+              </div>
+              <div className="skel" style={{ height: 12, width: 54 }} />
+            </div>
+          )) : null}
+          {statsError && !statsLoading ? <div className="song-empty">stats.fm unavailable.</div> : null}
+          {statsArtists.map((artist, index) => (
+            <article key={artist.name} className="song-row">
+              <div className="song-index">{pad(index + 1)}</div>
+              <div className="song-art-wrap">
+                <img className="song-art" src={artist.image || heroImage} alt="" draggable="false" loading="lazy" />
+              </div>
+              <div>
+                <div className="song-title-line">
+                  {artist.spotifyId ? (
+                    <a href={`https://open.spotify.com/artist/${artist.spotifyId}`} target="_blank" rel="noreferrer">
+                      <strong>{artist.name}</strong>
+                    </a>
+                  ) : (
+                    <strong>{artist.name}</strong>
+                  )}
+                </div>
+              </div>
+              <small>{artist.plays ? `${artist.plays.toLocaleString()} plays` : `#${artist.rank}`}</small>
+              <em><SpotifyGlyph size={18} /></em>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {mode === 'genres' ? (
+        <div className="genre-grid" key="genres">
+          {statsLoading ? Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="skel" style={{ width: `${60 + (i % 4) * 20}px`, height: 32, borderRadius: 20 }} />
+          )) : null}
+          {statsError && !statsLoading ? <div className="song-empty">stats.fm unavailable.</div> : null}
+          {statsGenres.map((genre, index) => (
+            <div key={genre.name} className="genre-pill">
+              <span className="genre-rank">{pad(index + 1)}</span>
+              <span className="genre-name">{genre.name}</span>
+              {genre.plays ? <span className="genre-plays">{genre.plays.toLocaleString()}</span> : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -1786,6 +2111,65 @@ function AdminUploadsPanel() {
   )
 }
 
+function SocialsEditor({ value, onChange }) {
+  const rows = (() => {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch {}
+    return socials.map(({ label, href }) => ({ label, href }))
+  })()
+
+  function commit(next) { onChange(JSON.stringify(next)) }
+  function setRow(i, field, val) { commit(rows.map((r, idx) => (idx === i ? { ...r, [field]: val } : r))) }
+  function move(i, dir) {
+    const j = i + dir
+    if (j < 0 || j >= rows.length) return
+    const next = [...rows]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    commit(next)
+  }
+  function remove(i) { commit(rows.filter((_, idx) => idx !== i)) }
+  function add() { commit([...rows, { label: '', href: '' }]) }
+
+  return (
+    <div className="socials-editor">
+      {rows.map((row, i) => {
+        const { icon: Icon } = detectSocialPlatform(row.href || '')
+        return (
+          <div key={i} className="socials-editor-row">
+            <span className="socials-editor-icon"><Icon size={14} /></span>
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="label"
+              value={row.label || ''}
+              onChange={e => setRow(i, 'label', e.target.value)}
+            />
+            <input
+              className="admin-input"
+              type="text"
+              placeholder="https://…"
+              value={row.href || ''}
+              onChange={e => setRow(i, 'href', e.target.value)}
+            />
+            <button type="button" className="socials-editor-btn" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">
+              <ArrowUp size={13} />
+            </button>
+            <button type="button" className="socials-editor-btn" onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label="Move down">
+              <ArrowDown size={13} />
+            </button>
+            <button type="button" className="socials-editor-btn socials-editor-btn--danger" onClick={() => remove(i)} aria-label="Remove">
+              <Trash2 size={13} />
+            </button>
+          </div>
+        )
+      })}
+      <button type="button" className="admin-btn admin-btn--sm" onClick={add}>+ add social</button>
+    </div>
+  )
+}
+
 function AdminPanel() {
   const [step, setStep] = useState(() => localStorage.getItem('admin_token') ? 'check' : 'email')
   const [email, setEmail] = useState('')
@@ -1797,12 +2181,14 @@ function AdminPanel() {
     custom_status: '', location: '', about_bio: '',
     custom_name: '', custom_handle: '', ascii_comment: '', name_style: 'neon',
     custom_avatar_url: '', custom_banner_url: '',
+    particles: 'dots', socials: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const { profile: discordProfile } = useDiscordPresence()
   const spotify = discordProfile?.spotify
+  const now = useClock()
   useAccentColor(spotify?.album_art_url)
 
   useEffect(() => {
@@ -1857,7 +2243,7 @@ function AdminPanel() {
 
   async function save(e) {
     e.preventDefault()
-    setLoading(true)
+    setLoading(true); setError('')
     try {
       const res = await fetch('/api/admin/content', {
         method: 'PUT',
@@ -1866,7 +2252,11 @@ function AdminPanel() {
       })
       if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 2500) }
       else if (res.status === 401) { localStorage.removeItem('admin_token'); setStep('email') }
-    } catch {}
+      else {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || `Save failed (${res.status}).`)
+      }
+    } catch { setError('Save failed — network error.') }
     setLoading(false)
   }
 
@@ -1970,7 +2360,7 @@ function AdminPanel() {
             <div className="snp-bar">
               <div
                 className="snp-bar-fill"
-                style={{ width: `${spotify.timestamps?.end ? Math.min(100, Math.max(0, (Date.now() - spotify.timestamps.start) / (spotify.timestamps.end - spotify.timestamps.start) * 100)) : 0}%` }}
+                style={{ width: `${spotify.timestamps?.end ? Math.min(100, Math.max(0, (now.getTime() - spotify.timestamps.start) / (spotify.timestamps.end - spotify.timestamps.start) * 100)) : 0}%` }}
               />
             </div>
           </div>
@@ -2067,16 +2457,20 @@ function AdminPanel() {
             />
           </label>
 
+          <p className="admin-section-label">socials</p>
+          <div className="admin-field">
+            <span>social badges (icon auto-detects from url)</span>
+            <SocialsEditor
+              value={content.socials || ''}
+              onChange={val => setContent(c => ({ ...c, socials: val }))}
+            />
+          </div>
+
           <p className="admin-section-label">particles</p>
           <div className="admin-field">
             <span>background style</span>
             <div className="particle-picker">
-              {[
-                { id: 'none',     label: '— none'      },
-                { id: 'dots',     label: '● dots'      },
-                { id: 'stars',    label: '✦ stars'     },
-                { id: 'sparkles', label: '✧ sparkles'  },
-              ].map(({ id, label }) => (
+              {PARTICLE_STYLES.map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
@@ -2201,7 +2595,7 @@ export default function App() {
           </div>
         </div>
         <div className="bottom-grid">
-          <AboutCard onOpenSpecs={() => setSpecsOpen(true)} aboutBio={siteContent.about_bio} />
+          <AboutCard onOpenSpecs={() => setSpecsOpen(true)} aboutBio={siteContent.about_bio} customSocials={siteContent.socials} />
           <SongsCard />
         </div>
         <GamesCard />

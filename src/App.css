@@ -1729,6 +1729,76 @@ a {
   transition: color 0.9s ease;
 }
 
+.songs-mode-tabs {
+  display: inline-flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.songs-mode-tabs button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.songs-mode-tabs button.songs-tab--active {
+  background: rgba(var(--accent-rgb), 0.2);
+  color: rgb(var(--accent-rgb));
+  filter: brightness(1.3);
+}
+
+.genre-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  animation: songsFadeIn 280ms ease;
+}
+
+.genre-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.genre-rank {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-soft);
+}
+
+.genre-name {
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.genre-plays {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
 .search-box {
   display: inline-flex;
   align-items: center;
@@ -1841,6 +1911,7 @@ a {
   display: grid;
   align-content: start;
   gap: 9px;
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
@@ -3436,6 +3507,230 @@ input[type='range'] {
   font-size: 11px;
   color: #50e696;
   letter-spacing: 0.08em;
+}
+
+/* ── card spotlight + hover glow ─────────────────── */
+.profile-card::after,
+.spotify-card::after,
+.section-card::after,
+.mini-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(var(--accent-rgb), 0.075),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.profile-panel:hover .profile-card::after,
+.spotify-card:hover::after,
+.section-card:hover::after,
+.mini-card:hover::after {
+  opacity: 1;
+}
+
+.profile-card,
+.spotify-card,
+.section-card,
+.mini-card {
+  transition: transform 220ms ease-out, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.profile-panel:hover .profile-card,
+.spotify-card:hover,
+.section-card:hover,
+.mini-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.30);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.09);
+}
+
+/* ── avatar ring reacts to music ─────────────────── */
+.avatar-wrap--playing::before {
+  animation-duration: 1.6s;
+}
+
+.avatar-wrap--playing::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  z-index: -2;
+  box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.55);
+  animation: avatarGlowPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes avatarGlowPulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+/* ── game tile shine sweep ───────────────────────── */
+.game-tile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(255, 255, 255, 0.13),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+
+.game-tile:hover::after {
+  left: 130%;
+}
+
+/* ── accent text selection ───────────────────────── */
+::selection {
+  background: rgba(var(--accent-rgb), 0.32);
+  color: #fff;
+}
+
+/* ── section title glow ──────────────────────────── */
+.section-title-row h2,
+.mini-card h2 {
+  text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.28);
+  transition: text-shadow 0.9s ease;
+}
+
+/* ── socials editor (admin) ──────────────────────── */
+.socials-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.socials-editor-row {
+  display: grid;
+  grid-template-columns: 26px minmax(70px, 110px) minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.socials-editor-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: rgba(var(--accent-rgb), 0.9);
+}
+
+.socials-editor-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+
+.socials-editor-btn:hover:not(:disabled) {
+  color: #bfe8ff;
+  border-color: rgba(143, 216, 255, 0.36);
+}
+
+.socials-editor-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.socials-editor-btn--danger:hover:not(:disabled) {
+  color: #ff4466;
+  border-color: rgba(255, 68, 102, 0.4);
+}
+
+/* ── extra platform badge colors ─────────────────── */
+.social-badge--twitter {
+  background: rgba(29, 155, 240, 0.09);
+  border-color: rgba(29, 155, 240, 0.28);
+  color: #1d9bf0;
+}
+.social-badge--twitter:hover {
+  background: rgba(29, 155, 240, 0.17);
+  border-color: rgba(29, 155, 240, 0.58);
+  box-shadow: 0 0 14px rgba(29, 155, 240, 0.26), inset 0 0 8px rgba(29, 155, 240, 0.07);
+}
+
+.social-badge--youtube {
+  background: rgba(255, 0, 51, 0.09);
+  border-color: rgba(255, 0, 51, 0.28);
+  color: #ff4d5e;
+}
+.social-badge--youtube:hover {
+  background: rgba(255, 0, 51, 0.17);
+  border-color: rgba(255, 0, 51, 0.58);
+  box-shadow: 0 0 14px rgba(255, 0, 51, 0.26), inset 0 0 8px rgba(255, 0, 51, 0.07);
+}
+
+.social-badge--twitch {
+  background: rgba(145, 70, 255, 0.09);
+  border-color: rgba(145, 70, 255, 0.28);
+  color: #a970ff;
+}
+.social-badge--twitch:hover {
+  background: rgba(145, 70, 255, 0.17);
+  border-color: rgba(145, 70, 255, 0.58);
+  box-shadow: 0 0 14px rgba(145, 70, 255, 0.26), inset 0 0 8px rgba(145, 70, 255, 0.07);
+}
+
+.social-badge--steam {
+  background: rgba(102, 192, 244, 0.08);
+  border-color: rgba(102, 192, 244, 0.26);
+  color: #66c0f4;
+}
+.social-badge--steam:hover {
+  background: rgba(102, 192, 244, 0.16);
+  border-color: rgba(102, 192, 244, 0.55);
+  box-shadow: 0 0 14px rgba(102, 192, 244, 0.24), inset 0 0 8px rgba(102, 192, 244, 0.07);
+}
+
+.social-badge--spotify {
+  background: rgba(30, 215, 96, 0.08);
+  border-color: rgba(30, 215, 96, 0.26);
+  color: #1ed760;
+}
+.social-badge--spotify:hover {
+  background: rgba(30, 215, 96, 0.16);
+  border-color: rgba(30, 215, 96, 0.55);
+  box-shadow: 0 0 14px rgba(30, 215, 96, 0.24), inset 0 0 8px rgba(30, 215, 96, 0.07);
+}
+
+.social-badge--tiktok {
+  background: rgba(254, 44, 85, 0.08);
+  border-color: rgba(254, 44, 85, 0.26);
+  color: #fe2c55;
+}
+.social-badge--tiktok:hover {
+  background: rgba(254, 44, 85, 0.16);
+  border-color: rgba(254, 44, 85, 0.55);
+  box-shadow: 0 0 14px rgba(254, 44, 85, 0.24), inset 0 0 8px rgba(254, 44, 85, 0.07);
+}
+
+.social-badge--generic {
+  background: rgba(var(--accent-rgb), 0.07);
+  border-color: rgba(var(--accent-rgb), 0.25);
+  color: rgb(var(--accent-rgb));
+}
+.social-badge--generic:hover {
+  background: rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.22), inset 0 0 8px rgba(var(--accent-rgb), 0.06);
 }
 
 /* ── mobile: drop expensive backdrop-filter ──────── */

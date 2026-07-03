@@ -1710,11 +1710,14 @@ a {
   .specs-grid { grid-template-columns: 1fr; }
 }
 
+/* height: 0 keeps the songs card from influencing the grid row height, so
+   the About Me card alone drives it; min-height: 100% then stretches the
+   songs card to exactly match. */
 .songs-card {
   display: flex;
   flex-direction: column;
-  height: 336px;
-  min-height: 336px;
+  height: 0;
+  min-height: 100%;
   overflow: visible;
 }
 
@@ -2379,6 +2382,13 @@ input[type='range'] {
   .top-grid,
   .bottom-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* single column: songs card is alone in its row, so give it a real height
+     again instead of matching About Me */
+  .songs-card {
+    height: 336px;
+    min-height: 336px;
   }
 
   .media-player {

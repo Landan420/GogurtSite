@@ -7,6 +7,8 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  ChevronLeft,
+  ChevronRight,
   CircuitBoard,
   Clock3,
   Code2,
@@ -1660,7 +1662,7 @@ function useRecentGames() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled) {
-          setGames(data?.games || [])
+          setGames((data?.games || []).filter((g) => g.appid !== 480 && !/spacewar/i.test(g.name || '')))
           setLoading(false)
         }
       })
@@ -1697,20 +1699,54 @@ function GameImage({ headerUrl, appid, iconUrl, name }) {
   )
 }
 
+const GAMES_PER_PAGE = 4
+
 function GamesCard() {
   const tiltRef = useTilt()
   const { games, loading } = useRecentGames()
-  const displayGames = useMemo(() => {
-    const cols = 4
-    const snapped = Math.floor(games.length / cols) * cols
-    return games.slice(0, snapped || games.length)
+  const [page, setPage] = useState(0)
+
+  const pageChunks = useMemo(() => {
+    const chunks = []
+    for (let i = 0; i < games.length; i += GAMES_PER_PAGE) {
+      chunks.push(games.slice(i, i + GAMES_PER_PAGE))
+    }
+    return chunks
   }, [games])
+
+  const pageCount = Math.max(1, pageChunks.length)
+  const clampedPage = Math.min(page, pageCount - 1)
 
   return (
     <section className="section-card games-card" ref={tiltRef}>
       <div className="section-title-row">
         <h2>Recently Played</h2>
         <div className="icon-actions">
+          {pageCount > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(0, clampedPage - 1))}
+                disabled={clampedPage === 0}
+                aria-label="Previous games"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="games-page-dots" aria-hidden="true">
+                {Array.from({ length: pageCount }).map((_, i) => (
+                  <i key={i} className={i === clampedPage ? 'active' : ''} />
+                ))}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(pageCount - 1, clampedPage + 1))}
+                disabled={clampedPage === pageCount - 1}
+                aria-label="Next games"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </>
+          ) : null}
           <a
             href="https://steamcommunity.com/profiles/76561198169143538"
             target="_blank"
@@ -1721,32 +1757,42 @@ function GamesCard() {
           </a>
         </div>
       </div>
-      <div className="games-grid">
-        {loading
-          ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="game-tile game-tile--skeleton" />
-            ))
-          : displayGames.length === 0
-            ? <div className="song-empty">No recently played games.</div>
-            : displayGames.map((game) => (
-                <a
-                  key={game.appid}
-                  className="game-tile"
-                  href={`https://store.steampowered.com/app/${game.appid}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <GameImage headerUrl={game.headerUrl} appid={game.appid} iconUrl={game.iconUrl} name={game.name} />
-                  <div className="game-overlay">
-                    <strong>{game.name}</strong>
-                    <span>{game.hoursTotal.toLocaleString()} hrs total</span>
-                    {game.hoursRecent != null && (
-                      <small>{game.hoursRecent} hrs past 2 weeks</small>
-                    )}
-                  </div>
-                </a>
-              ))}
-      </div>
+      {loading ? (
+        <div className="games-grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="game-tile game-tile--skeleton" />
+          ))}
+        </div>
+      ) : games.length === 0 ? (
+        <div className="song-empty">No recently played games.</div>
+      ) : (
+        <div className="games-viewport">
+          <div className="games-track" style={{ transform: `translateX(-${clampedPage * 100}%)` }}>
+            {pageChunks.map((chunk, i) => (
+              <div key={i} className="games-grid games-grid--page">
+                {chunk.map((game) => (
+                  <a
+                    key={game.appid}
+                    className="game-tile"
+                    href={`https://store.steampowered.com/app/${game.appid}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <GameImage headerUrl={game.headerUrl} appid={game.appid} iconUrl={game.iconUrl} name={game.name} />
+                    <div className="game-overlay">
+                      <strong>{game.name}</strong>
+                      <span>{game.hoursTotal.toLocaleString()} hrs total</span>
+                      {game.hoursRecent != null && (
+                        <small>{game.hoursRecent} hrs past 2 weeks</small>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }
@@ -1799,7 +1845,26 @@ const RTE_EFFECTS = [
   { cls: 'name-style-ice',      label: '❄',  title: 'Ice',    size: '18px'      },
   { cls: 'name-style-chrome',   label: '◈',  title: 'Chrome', size: '18px'      },
   { cls: 'name-style-aurora',   label: '◉',  title: 'Aurora', size: '18px'      },
+  { cls: 'name-style-blood',    label: '🩸', title: 'Blood'                     },
+  { cls: 'name-style-void',     label: '🌑', title: 'Void'                      },
+  { cls: 'name-style-melt',     label: '💧', title: 'Melt'                      },
+  { cls: 'name-style-plasma',   label: '🔮', title: 'Plasma'                    },
+  { cls: 'name-style-gold',     label: '👑', title: 'Gold'                      },
+  { cls: 'name-style-matrix',   label: '🟩', title: 'Matrix'                    },
+  { cls: 'name-style-toxic',    label: '☣',  title: 'Toxic',  size: '16px'      },
+  { cls: 'fx-shimmer',          label: '✨', title: 'Shimmer'                   },
+  { cls: 'fx-glow',             label: '💡', title: 'Glow'                      },
+  { cls: 'fx-flicker',          label: '🕯',  title: 'Flicker', size: '16px'     },
+  { cls: 'fx-sunset',           label: '🌅', title: 'Sunset gradient'           },
+  { cls: 'fx-ocean',            label: '🌊', title: 'Ocean gradient'            },
+  { cls: 'fx-candy',            label: '🍬', title: 'Candy gradient'            },
+  { cls: 'fx-outline',          label: '◻',  title: 'Outline', size: '16px'     },
+  { cls: 'fx-pop',              label: '3D', title: '3D pop',  size: '11px'     },
+  { cls: 'fx-shake',            label: '🫨', title: 'Shake'                     },
+  { cls: 'fx-spoiler',          label: '🫥', title: 'Spoiler (hover to reveal)' },
 ]
+
+const RTE_EFFECT_CLASSES = RTE_EFFECTS.map(fx => fx.cls)
 
 function RichBioEditor({ value, onChange }) {
   const editorRef = useRef(null)
@@ -1819,41 +1884,89 @@ function RichBioEditor({ value, onChange }) {
     setTimeout(() => { skipSync.current = false }, 0)
   }
 
-  function applyEffect(cls) {
-    editorRef.current?.focus()
-    const sel = window.getSelection()
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
-    const range = sel.getRangeAt(0)
-
-    // Walk up from selection anchor to find an existing span with this class
-    let existingSpan = null
-    let node = range.commonAncestorContainer
-    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
-    let cursor = node
-    while (cursor && cursor !== editorRef.current) {
-      if (cursor.tagName === 'SPAN' && cursor.classList.contains(cls)) {
-        existingSpan = cursor; break
-      }
-      cursor = cursor.parentElement
-    }
-
-    if (existingSpan) {
-      // Toggle off: select the whole span then replace it with its inner content
-      const unwrapRange = document.createRange()
-      unwrapRange.selectNode(existingSpan)
-      sel.removeAllRanges()
-      sel.addRange(unwrapRange)
-      document.execCommand('insertHTML', false, existingSpan.innerHTML)
-    } else {
-      // Wrap: capture selection HTML and insert wrapped version (undoable via execCommand)
-      const tmp = document.createElement('div')
-      tmp.appendChild(range.cloneContents())
-      document.execCommand('insertHTML', false, `<span class="${cls}">${tmp.innerHTML}</span>`)
-    }
-
+  function commitHtml() {
     skipSync.current = true
     onChange(editorRef.current.innerHTML)
     setTimeout(() => { skipSync.current = false }, 0)
+  }
+
+  function unwrapSpan(span) {
+    const parent = span.parentNode
+    while (span.firstChild) parent.insertBefore(span.firstChild, span)
+    parent.removeChild(span)
+    parent.normalize()
+  }
+
+  function applyEffect(cls) {
+    const root = editorRef.current
+    root?.focus()
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return
+    const range = sel.getRangeAt(0)
+    if (!root.contains(range.commonAncestorContainer)) return
+
+    // Toggle off: selection sits inside a span with this class
+    let node = range.commonAncestorContainer
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
+    for (let cursor = node; cursor && cursor !== root; cursor = cursor.parentElement) {
+      if (cursor.tagName === 'SPAN' && cursor.classList.contains(cls)) {
+        unwrapSpan(cursor)
+        sel.removeAllRanges()
+        commitHtml()
+        return
+      }
+    }
+
+    // Toggle off: selection contains spans with this class
+    const contained = [...root.querySelectorAll(`span.${CSS.escape(cls)}`)].filter(s => range.intersectsNode(s))
+    if (contained.length > 0) {
+      contained.forEach(unwrapSpan)
+      sel.removeAllRanges()
+      commitHtml()
+      return
+    }
+
+    // Wrap each selected text segment separately so block boundaries stay
+    // intact (no stray rows), trimming whitespace off the edges so effects
+    // never swallow blank space.
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const targets = []
+    for (let textNode = walker.nextNode(); textNode; textNode = walker.nextNode()) {
+      if (!range.intersectsNode(textNode)) continue
+      const text = textNode.textContent
+      let start = textNode === range.startContainer ? range.startOffset : 0
+      let end = textNode === range.endContainer ? range.endOffset : text.length
+      while (start < end && /\s/.test(text[start])) start++
+      while (end > start && /\s/.test(text[end - 1])) end--
+      if (start < end) targets.push({ textNode, start, end })
+    }
+    for (const { textNode, start, end } of targets) {
+      const segment = document.createRange()
+      segment.setStart(textNode, start)
+      segment.setEnd(textNode, end)
+      const span = document.createElement('span')
+      span.className = cls
+      segment.surroundContents(span)
+    }
+    sel.removeAllRanges()
+    commitHtml()
+  }
+
+  function clearEffects() {
+    const root = editorRef.current
+    root?.focus()
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return
+    const range = sel.getRangeAt(0)
+    if (!root.contains(range.commonAncestorContainer)) return
+    const spans = [...root.querySelectorAll('span')].filter(s =>
+      RTE_EFFECT_CLASSES.some(c => s.classList.contains(c)) &&
+      (range.intersectsNode(s) || s.contains(range.commonAncestorContainer)),
+    )
+    if (spans.length === 0) return
+    spans.forEach(unwrapSpan)
+    sel.removeAllRanges()
+    commitHtml()
   }
 
   function onInput() {
@@ -1894,6 +2007,14 @@ function RichBioEditor({ value, onChange }) {
             {fx.label}
           </button>
         ))}
+        <button
+          type="button"
+          title="Remove all effects from selection"
+          className="rte-effect-btn rte-effect-btn--clear"
+          onMouseDown={e => { e.preventDefault(); clearEffects() }}
+        >
+          ✕fx
+        </button>
       </div>
       <div
         ref={editorRef}

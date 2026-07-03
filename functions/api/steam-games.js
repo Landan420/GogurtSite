@@ -1,6 +1,6 @@
 const FALLBACK_STEAM_ID = '76561198169143538'
 const EXCLUDED_APPIDS = new Set([480]) // Spacewar + junk
-const TARGET_COUNT = 8
+const TARGET_COUNT = 24
 
 function json(data, init = {}) {
   const headers = new Headers(init.headers)
@@ -44,7 +44,7 @@ export async function onRequestGet(context) {
 
   const gamesData = await gamesRes.json()
   const rawGames = (gamesData.response?.games || [])
-    .filter((g) => !EXCLUDED_APPIDS.has(g.appid))
+    .filter((g) => !EXCLUDED_APPIDS.has(g.appid) && !/spacewar/i.test(g.name || ''))
     .slice(0, TARGET_COUNT)
 
   if (rawGames.length === 0) return json({ games: [] })

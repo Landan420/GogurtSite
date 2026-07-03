@@ -29,10 +29,12 @@ export async function onRequestGet(context) {
 
   const steamId = context.env.STEAM_ID || FALLBACK_STEAM_ID
 
+  // GetOwnedGames includes rtime_last_played for the whole library, unlike
+  // GetRecentlyPlayedGames which only covers the past 2 weeks.
   let gamesRes
   try {
     gamesRes = await fetch(
-      `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${key}&steamid=${steamId}&count=30&format=json`,
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${key}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&format=json`,
     )
   } catch {
     return json({ error: 'Steam API unreachable.' }, { status: 502 })
@@ -44,7 +46,13 @@ export async function onRequestGet(context) {
 
   const gamesData = await gamesRes.json()
   const rawGames = (gamesData.response?.games || [])
-    .filter((g) => !EXCLUDED_APPIDS.has(g.appid) && !/spacewar/i.test(g.name || ''))
+    .filter((g) =>
+      !EXCLUDED_APPIDS.has(g.appid) &&
+      !/spacewar/i.test(g.name || '') &&
+      (g.rtime_last_played || 0) > 0 &&
+      (g.playtime_forever || 0) > 0,
+    )
+    .sort((a, b) => (b.rtime_last_played || 0) - (a.rtime_last_played || 0))
     .slice(0, TARGET_COUNT)
 
   if (rawGames.length === 0) return json({ games: [] })

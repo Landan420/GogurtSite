@@ -362,6 +362,35 @@ function normalizeStatsTrack(item, index) {
   }
 }
 
+function normalizeLastfmTrack(item, index) {
+  const images = item.image || []
+  const image =
+    images.find((img) => img.size === 'extralarge')?.['#text'] ||
+    images.find((img) => img.size === 'large')?.['#text'] ||
+    images[images.length - 1]?.['#text'] ||
+    ''
+  const nowPlaying = item['@attr']?.nowplaying === 'true'
+  const endTime = item.date?.uts
+    ? Number(item.date.uts) * 1000
+    : nowPlaying
+      ? Date.now()
+      : null
+
+  return {
+    title: item.name || 'Unknown track',
+    artist: item.artist?.['#text'] || item.artist?.name || 'Unknown artist',
+    album: item.album?.['#text'] || 'Unknown album',
+    image: image || heroImage,
+    spotifyId: undefined,
+    previewUrl: null,
+    endTime,
+    rank: index + 1,
+    plays: undefined,
+    vibe: nowPlaying ? 'now playing' : 'last.fm',
+    repeatCount: 1,
+  }
+}
+
 function normalizeStatsArtist(item, index) {
   const artist = item.artist ?? item
   const spotifyId = artist.externalIds?.spotify?.[0]
@@ -1398,28 +1427,55 @@ function SongsCard() {
     setStatsLoading(true)
     setStatsError(false)
 
+    // Last.fm fallback for the recent feed when stats.fm is down or empty.
+    // The API key lives in a Cloudflare Pages secret; the function proxies it.
+    async function loadLastfmRecent() {
+      const response = await fetch('/api/lastfm-recent', { cache: 'no-cache' })
+      if (!response.ok) throw new Error('last.fm request failed')
+      const payload = await response.json()
+      return (payload.tracks || []).map(normalizeLastfmTrack)
+    }
+
     fetch(endpoint, { cache: mode === 'recent' ? 'no-cache' : 'default' })
       .then((response) => {
         if (!response.ok) throw new Error('stats.fm request failed')
         return response.json()
       })
-      .then((payload) => {
+      .then(async (payload) => {
         if (cancelled) return
         if (mode === 'artists') {
           setStatsArtists((payload.items || []).slice(0, 40).map(normalizeStatsArtist))
         } else if (mode === 'genres') {
           setStatsGenres((payload.items || []).slice(0, 40).map(normalizeStatsGenre))
         } else {
-          setStatsSongs((payload.items || []).slice(0, 40).map(normalizeStatsTrack))
+          const songs = (payload.items || []).slice(0, 40).map(normalizeStatsTrack)
+          if (mode === 'recent' && songs.length === 0) {
+            const lastfmSongs = await loadLastfmRecent().catch(() => [])
+            if (cancelled) return
+            setStatsSongs(lastfmSongs)
+          } else {
+            setStatsSongs(songs)
+          }
         }
       })
-      .catch(() => {
-        if (!cancelled) {
-          setStatsError(true)
-          if (mode === 'artists') setStatsArtists([])
-          else if (mode === 'genres') setStatsGenres([])
-          else setStatsSongs([])
+      .catch(async () => {
+        if (cancelled) return
+        if (mode === 'recent') {
+          try {
+            const lastfmSongs = await loadLastfmRecent()
+            if (cancelled) return
+            if (lastfmSongs.length > 0) {
+              setStatsSongs(lastfmSongs)
+              return
+            }
+          } catch {
+            // fall through to the error state below
+          }
         }
+        setStatsError(true)
+        if (mode === 'artists') setStatsArtists([])
+        else if (mode === 'genres') setStatsGenres([])
+        else setStatsSongs([])
       })
       .finally(() => {
         if (!cancelled) setStatsLoading(false)

@@ -74,6 +74,9 @@ function navigate(href) {
 const DISCORD_ID = '419739869229875211'
 const BIRTHDAY    = new Date('2004-06-14T00:00:00-05:00')
 const HOME_TIMEZONE = 'America/Chicago'
+const SITE_LAUNCH_DATE = new Date(__SITE_LAUNCH_ISO__)
+const SITE_DEPLOY_COUNT = __DEPLOY_COUNT__
+const SITE_LOC_COUNT = __LOC_COUNT__
 const SPOTIFY_PROFILE_URL = 'https://open.spotify.com/user/31egnorheofu6chyae74gd7tquou'
 const STATS_FM_ID = 'landan420'
 const STATUS_EMOJI_URL = 'https://cdn.discordapp.com/emojis/1130957016257540236.webp?size=48&quality=lossless'
@@ -454,6 +457,48 @@ function getStaticAge(now) {
     now.getMonth() > BIRTHDAY.getMonth() ||
     (now.getMonth() === BIRTHDAY.getMonth() && now.getDate() >= BIRTHDAY.getDate())
   return hadBirthday ? age : age - 1
+}
+
+function getSiteDaysLive(now) {
+  const diff = Math.max(0, now.getTime() - SITE_LAUNCH_DATE.getTime())
+  return Math.floor(diff / 86400000)
+}
+
+function getSiteDaysLiveExact(now) {
+  const diff = Math.max(0, now.getTime() - SITE_LAUNCH_DATE.getTime())
+  return (diff / 86400000).toFixed(6)
+}
+
+// Offset of a named timezone from UTC, in minutes, at a given instant.
+function getTimezoneOffsetMinutes(timeZone, date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  }).formatToParts(date).reduce((acc, p) => { acc[p.type] = p.value; return acc }, {})
+  const asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute)
+  return Math.round((asUTC - date.getTime()) / 60000)
+}
+
+function getHourDiffText(now) {
+  const homeOffsetMin = getTimezoneOffsetMinutes(HOME_TIMEZONE, now)
+  const visitorOffsetMin = -now.getTimezoneOffset()
+  const diffMin = homeOffsetMin - visitorOffsetMin
+  if (Math.abs(diffMin) < 30) return "same time as you"
+  const diffHours = Math.round(diffMin / 30) / 2
+  const abs = Math.abs(diffHours)
+  const unit = abs === 1 ? 'hour' : 'hours'
+  return `${abs} ${unit} ${diffHours > 0 ? 'ahead of' : 'behind'} you`
+}
+
+function getVisitorGreeting(now) {
+  const h = now.getHours()
+  if (h < 5) return 'up late 🌙'
+  if (h < 12) return 'good morning 👋'
+  if (h < 17) return 'good afternoon 👋'
+  if (h < 21) return 'good evening 👋'
+  return 'good night 🌙'
 }
 
 function getStatusText(status) {
@@ -1123,9 +1168,13 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
   return (
     <div className="profile-panel" ref={tiltRef}>
       <div className="profile-meta-row">
-        <div className="meta-badge">
+        <div className="meta-badge tooltip-trigger">
           <Clock3 size={16} />
           <span>{timeText}</span>
+          <span className="tooltip-box">{getHourDiffText(now)}</span>
+        </div>
+        <div className="meta-badge meta-badge--greeting">
+          <span>{getVisitorGreeting(now)}</span>
         </div>
       </div>
       <section className="profile-card">
@@ -2706,6 +2755,16 @@ function HardwareWarning() {
   )
 }
 
+function SiteStatsTag() {
+  const now = useClock()
+  return (
+    <span className="site-stats-tag tooltip-trigger">
+      {getSiteDaysLive(now)}d live · {SITE_DEPLOY_COUNT} deploys · {SITE_LOC_COUNT.toLocaleString()} lines
+      <span className="tooltip-box">{getSiteDaysLiveExact(now)} days live, exactly</span>
+    </span>
+  )
+}
+
 export default function App() {
   if (window.location.pathname === '/admin') return <AdminPanel />
   if (window.location.pathname === '/admin/uploads') return <AdminUploadsPanel />
@@ -2780,6 +2839,7 @@ export default function App() {
       {specsOpen && <SpecsModal onClose={() => setSpecsOpen(false)} />}
       <HardwareWarning />
       <span className="dev-tag">made by landan</span>
+      <SiteStatsTag />
     </main>
   )
 }

@@ -316,6 +316,7 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
 }
 
 .meta-badge {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -329,10 +330,16 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   font-size: 12px;
   backdrop-filter: blur(10px);
   transition: transform 180ms ease-out;
+  pointer-events: auto;
 }
 
 .meta-badge:hover {
   transform: perspective(500px) rotateY(4deg) rotateX(-1deg);
+}
+
+.meta-badge--greeting {
+  margin-left: auto;
+  color: var(--text-soft);
 }
 
 .meta-badge img {
@@ -1155,6 +1162,36 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   pointer-events: auto;
   transition: color 0.25s ease;
   user-select: none;
+}
+
+.site-stats-tag {
+  position: fixed;
+  bottom: 16px;
+  right: 18px;
+  font-size: 10px;
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.2);
+  z-index: 200;
+  pointer-events: auto;
+  cursor: help;
+  transition: color 0.25s ease;
+  user-select: none;
+}
+
+.site-stats-tag:hover,
+.dev-tag:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.site-stats-tag .tooltip-box {
+  left: auto;
+  right: 0;
+  transform: translateY(4px);
+}
+
+.site-stats-tag:hover .tooltip-box {
+  transform: translateY(0);
 }
 
 .tooltip-box {

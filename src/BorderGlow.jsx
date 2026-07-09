@@ -146,9 +146,7 @@ const BorderGlow = ({
       }}
     >
       <span className="edge-light" />
-      <div className="border-glow-inner">
-        {children}
-      </div>
+      {children}
     </div>
   );
 };

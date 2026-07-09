@@ -132,6 +132,14 @@
     0 0 50px 2px var(--glow-color-10, hsl(40deg 80% 80% / 10%));
 }
 
+/* suppress all glow layers while card is loading */
+.border-glow-card.glow-disabled::before,
+.border-glow-card.glow-disabled::after,
+.border-glow-card.glow-disabled > .edge-light {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 .border-glow-inner {
   display: flex;
   flex-direction: column;

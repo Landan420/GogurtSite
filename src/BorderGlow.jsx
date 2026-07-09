@@ -59,6 +59,7 @@ const BorderGlow = ({
   glowIntensity = 1.0,
   coneSpread = 25,
   animated = false,
+  disabled = false,
   colors = ['#c084fc', '#f472b6', '#38bdf8'],
   fillOpacity = 0.5,
 }) => {
@@ -133,7 +134,7 @@ const BorderGlow = ({
     <div
       ref={cardRef}
       onPointerMove={handlePointerMove}
-      className={`border-glow-card ${className}`}
+      className={`border-glow-card ${className}${disabled ? ' glow-disabled' : ''}`}
       style={{
         '--card-bg': backgroundColor,
         '--edge-sensitivity': edgeSensitivity,

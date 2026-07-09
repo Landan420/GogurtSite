@@ -1157,7 +1157,6 @@ function UploadsPage() {
 }
 
 function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customHandle }) {
-  const tiltRef = useTilt(2)
   const now = useClock()
   const timeText = new Intl.DateTimeFormat('en-US', {
     timeZone: HOME_TIMEZONE,
@@ -1167,7 +1166,7 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
   }).format(now)
 
   return (
-    <div className="profile-panel" ref={tiltRef}>
+    <div className="profile-panel">
       <div className="profile-meta-row">
         <div className="meta-badge tooltip-trigger">
           <Clock3 size={16} />
@@ -1184,10 +1183,11 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
         borderRadius={8}
         glowColor="200 100 78"
         colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-        glowRadius={32}
-        edgeSensitivity={20}
-        glowIntensity={1.1}
-        coneSpread={22}
+        glowRadius={24}
+        edgeSensitivity={72}
+        glowIntensity={0.55}
+        coneSpread={8}
+        disabled={loading}
       >
       <section className="profile-card">
         <img className="profile-banner" src={profile.bannerUrl || crewPhoto} alt="" draggable="false" />
@@ -1290,7 +1290,6 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
 }
 
 function SpotifyCard({ spotify }) {
-  const tiltRef = useTilt()
   const now = useClock()
   const isListening = Boolean(spotify)
   const nowMs = now instanceof Date ? now.getTime() : now
@@ -1305,12 +1304,12 @@ function SpotifyCard({ spotify }) {
       borderRadius={8}
       glowColor="200 100 78"
       colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={32}
-      edgeSensitivity={20}
-      glowIntensity={1.1}
-      coneSpread={22}
+      glowRadius={24}
+      edgeSensitivity={72}
+      glowIntensity={0.55}
+      coneSpread={8}
     >
-      <section className={`spotify-card ${isListening ? '' : 'inactive'}`} ref={tiltRef}>
+      <section className={`spotify-card ${isListening ? '' : 'inactive'}`}>
       <Disc3 className="spotify-bg-icon" />
       <div className="section-title-row">
         <h2>What i'm playing now.</h2>
@@ -1428,7 +1427,6 @@ function SpecsModal({ onClose }) {
 }
 
 function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
-  const tiltRef = useTilt()
   const hasText = aboutBio && aboutBio.replace(/<[^>]*>/g, '').trim().length > 0
   const bioHtml = (hasText ? aboutBio : DEFAULT_BIO)
     .replace(/<div>\s*<h3>\s*My Specs\s*<\/h3>\s*<\/div>/gi, '')
@@ -1441,12 +1439,12 @@ function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
       borderRadius={8}
       glowColor="200 100 78"
       colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={32}
-      edgeSensitivity={20}
-      glowIntensity={1.1}
-      coneSpread={22}
+      glowRadius={24}
+      edgeSensitivity={72}
+      glowIntensity={0.55}
+      coneSpread={8}
     >
-      <section className="section-card about-card" ref={tiltRef}>
+      <section className="section-card about-card">
       <div className="section-title-row">
         <h2>About Me</h2>
         <div className="social-badges">
@@ -1486,7 +1484,6 @@ const SONGS_MODE_TITLE = {
 }
 
 function SongsCard() {
-  const tiltRef = useTilt()
   const [mode, setMode] = useState('recent')
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
@@ -1608,12 +1605,13 @@ function SongsCard() {
       borderRadius={8}
       glowColor="200 100 78"
       colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={32}
-      edgeSensitivity={20}
-      glowIntensity={1.1}
-      coneSpread={22}
+      glowRadius={24}
+      edgeSensitivity={72}
+      glowIntensity={0.55}
+      coneSpread={8}
+      disabled={statsLoading || refreshing}
     >
-      <section className="section-card songs-card" ref={tiltRef}>
+      <section className="section-card songs-card">
       <div className="section-title-row">
         <h2>{SONGS_MODE_TITLE[mode]}</h2>
         <div className="song-controls">
@@ -1755,7 +1753,6 @@ function SongsCard() {
 }
 
 function ActivitiesCard({ activities, serverStats }) {
-  const tiltRef = useTilt()
   const visible = (activities || []).filter(
     (a) => a.type !== 4 && a.name !== 'Custom Status',
   )
@@ -1767,12 +1764,12 @@ function ActivitiesCard({ activities, serverStats }) {
       borderRadius={8}
       glowColor="200 100 78"
       colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={32}
-      edgeSensitivity={20}
-      glowIntensity={1.1}
-      coneSpread={22}
+      glowRadius={24}
+      edgeSensitivity={72}
+      glowIntensity={0.55}
+      coneSpread={8}
     >
-      <section className="mini-card" ref={tiltRef}>
+      <section className="mini-card">
       <div className="mini-card-header">
         <h2>Current Activities</h2>
         {serverStats?.onlineCount != null && (
@@ -1868,7 +1865,6 @@ function GameImage({ headerUrl, appid, iconUrl, name }) {
 const GAMES_PER_PAGE = 4
 
 function GamesCard() {
-  const tiltRef = useTilt()
   const { games, loading } = useRecentGames()
   const [page, setPage] = useState(0)
 
@@ -1890,12 +1886,13 @@ function GamesCard() {
       borderRadius={8}
       glowColor="200 100 78"
       colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={32}
-      edgeSensitivity={20}
-      glowIntensity={1.1}
-      coneSpread={22}
+      glowRadius={24}
+      edgeSensitivity={72}
+      glowIntensity={0.55}
+      coneSpread={8}
+      disabled={loading}
     >
-      <section className="section-card games-card" ref={tiltRef}>
+      <section className="section-card games-card">
       <div className="section-title-row">
         <h2>Recently Played</h2>
         <div className="icon-actions">

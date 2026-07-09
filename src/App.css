@@ -272,9 +272,14 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
 
 /* BorderGlow transparent wrapper — inner card provides all visual styling */
 .border-glow-card.card-glow-wrap {
-  border-color: transparent;
+  border: none;
   background: transparent;
   box-shadow: none;
+}
+
+/* Let inner card sections handle their own overflow (removes spurious scrollbars) */
+.card-glow-wrap > .border-glow-inner {
+  overflow: visible;
 }
 
 /* profile card glow wrapper must flex-fill its column */

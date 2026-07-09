@@ -1181,12 +1181,6 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
         className="card-glow-wrap profile-card-glow"
         backgroundColor="rgba(13,15,20,0.78)"
         borderRadius={8}
-        glowColor="200 100 78"
-        colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-        glowRadius={24}
-        edgeSensitivity={72}
-        glowIntensity={0.55}
-        coneSpread={8}
         disabled={loading}
       >
       <section className="profile-card">
@@ -1302,12 +1296,6 @@ function SpotifyCard({ spotify }) {
       className="card-glow-wrap"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
-      glowColor="200 100 78"
-      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={24}
-      edgeSensitivity={72}
-      glowIntensity={0.55}
-      coneSpread={8}
     >
       <section className={`spotify-card ${isListening ? '' : 'inactive'}`}>
       <Disc3 className="spotify-bg-icon" />
@@ -1437,12 +1425,6 @@ function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
       className="card-glow-wrap"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
-      glowColor="200 100 78"
-      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={24}
-      edgeSensitivity={72}
-      glowIntensity={0.55}
-      coneSpread={8}
     >
       <section className="section-card about-card">
       <div className="section-title-row">
@@ -1603,12 +1585,6 @@ function SongsCard() {
       className="card-glow-wrap songs-card-glow"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
-      glowColor="200 100 78"
-      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={24}
-      edgeSensitivity={72}
-      glowIntensity={0.55}
-      coneSpread={8}
       disabled={statsLoading || refreshing}
     >
       <section className="section-card songs-card">
@@ -1762,12 +1738,6 @@ function ActivitiesCard({ activities, serverStats }) {
       className="card-glow-wrap"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
-      glowColor="200 100 78"
-      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={24}
-      edgeSensitivity={72}
-      glowIntensity={0.55}
-      coneSpread={8}
     >
       <section className="mini-card">
       <div className="mini-card-header">
@@ -1881,15 +1851,9 @@ function GamesCard() {
 
   return (
     <BorderGlow
-      className="card-glow-wrap"
+      className="card-glow-wrap games-card-glow"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
-      glowColor="200 100 78"
-      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
-      glowRadius={24}
-      edgeSensitivity={72}
-      glowIntensity={0.55}
-      coneSpread={8}
       disabled={loading}
     >
       <section className="section-card games-card">

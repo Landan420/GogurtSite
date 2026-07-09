@@ -2227,9 +2227,14 @@ input[type='range'] {
 }
 
 .games-card {
-  margin-top: 16px;
   overflow: visible;
   min-height: auto;
+}
+
+/* margin + entrance live on the glow wrapper so the glow layer and the
+   visible card stay aligned (glow is inset:0 of the wrapper) */
+.games-card-glow {
+  margin-top: 16px;
   opacity: 0.001;
   pointer-events: none;
   animation: entrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s forwards;
@@ -3900,7 +3905,7 @@ input[type='range'] {
 
   .top-grid > *,
   .bottom-grid > *,
-  .games-card {
+  .games-card-glow {
     opacity: 1;
     transform: none;
     pointer-events: auto;

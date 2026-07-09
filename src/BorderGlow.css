@@ -12,6 +12,10 @@
   isolation: isolate;
   border-radius: var(--border-radius);
   display: grid;
+  /* minmax(0, …) drops the min-content floor so wide card content
+     (e.g. song rows) can't overflow the wrapper and misalign the glow */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   border: none;
   background: transparent;
   box-shadow: none;

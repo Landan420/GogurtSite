@@ -34,10 +34,11 @@
   transform: translateZ(0);
 }
 
+/* no inset here: this selector outranks the single-class rules below,
+   and .edge-light must keep its own negative inset */
 .border-glow-fx > .glow-ring,
 .border-glow-fx > .edge-light {
   position: absolute;
-  inset: 0;
   border-radius: inherit;
   transform: translateZ(0);
   transition: opacity 0.25s ease-out;
@@ -58,6 +59,7 @@
    Plain border (not an opaque background cover) so the glass-blur card
    background underneath stays intact. */
 .glow-ring {
+  inset: 0;
   border: 1px solid rgba(var(--glow-rgb), calc(0.9 * var(--glow-intensity)));
   mask-image: conic-gradient(
     from var(--cursor-angle) at center,

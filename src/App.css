@@ -263,11 +263,33 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
 .mini-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 8px;
   background: rgba(13, 15, 20, 0.78);
   box-shadow: 0 22px 65px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(18px);
+}
+
+/* BorderGlow transparent wrapper — inner card provides all visual styling */
+.border-glow-card.card-glow-wrap {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* profile card glow wrapper must flex-fill its column */
+.profile-card-glow {
+  flex: 1;
+}
+
+/* songs card glow wrapper takes the height-0 / min-height-100% trick */
+.songs-card-glow {
+  height: 0;
+  min-height: 100%;
+}
+
+.songs-card-glow > .border-glow-inner {
+  height: 100%;
 }
 
 .profile-panel {
@@ -1484,7 +1506,6 @@ a {
 
 .about-card {
   min-height: 336px;
-  padding-right: 20px;
 }
 
 .about-copy {
@@ -1747,14 +1768,11 @@ a {
   .specs-grid { grid-template-columns: 1fr; }
 }
 
-/* height: 0 keeps the songs card from influencing the grid row height, so
-   the About Me card alone drives it; min-height: 100% then stretches the
-   songs card to exactly match. */
 .songs-card {
   display: flex;
   flex-direction: column;
-  height: 0;
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: visible;
 }
 
@@ -2421,9 +2439,8 @@ input[type='range'] {
     grid-template-columns: 1fr;
   }
 
-  /* single column: songs card is alone in its row, so give it a real height
-     again instead of matching About Me */
-  .songs-card {
+  /* single column: songs card wrapper is alone in its row, give it a real height */
+  .songs-card-glow {
     height: 336px;
     min-height: 336px;
   }
@@ -3690,45 +3707,12 @@ input[type='range'] {
   letter-spacing: 0.08em;
 }
 
-/* ── card spotlight + hover glow ─────────────────── */
-.profile-card::after,
-.spotify-card::after,
-.section-card::after,
-.mini-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: radial-gradient(
-    380px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(var(--accent-rgb), 0.075),
-    transparent 65%
-  );
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-
-.profile-panel:hover .profile-card::after,
-.spotify-card:hover::after,
-.section-card:hover::after,
-.mini-card:hover::after {
-  opacity: 1;
-}
-
+/* ── card transitions (BorderGlow handles hover glow) ── */
 .profile-card,
 .spotify-card,
 .section-card,
 .mini-card {
-  transition: transform 220ms ease-out, border-color 0.4s ease, box-shadow 0.4s ease;
-}
-
-.profile-panel:hover .profile-card,
-.spotify-card:hover,
-.section-card:hover,
-.mini-card:hover {
-  border-color: rgba(var(--accent-rgb), 0.30);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4), 0 0 30px rgba(var(--accent-rgb), 0.09);
+  transition: transform 220ms ease-out;
 }
 
 /* ── avatar ring reacts to music ─────────────────── */

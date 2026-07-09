@@ -42,6 +42,7 @@ import heroImage from './assets/hero.png'
 import crewPhoto from './assets/gogurt-crew.webp'
 import profileImage from './assets/profile.jpg'
 import './App.css'
+import BorderGlow from './BorderGlow'
 
 const SPEC_SECTIONS = [
   {
@@ -1177,6 +1178,17 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
           <span>{getVisitorGreeting(now)}</span>
         </div>
       </div>
+      <BorderGlow
+        className="card-glow-wrap profile-card-glow"
+        backgroundColor="rgba(13,15,20,0.78)"
+        borderRadius={8}
+        glowColor="200 100 78"
+        colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+        glowRadius={32}
+        edgeSensitivity={20}
+        glowIntensity={1.1}
+        coneSpread={22}
+      >
       <section className="profile-card">
         <img className="profile-banner" src={profile.bannerUrl || crewPhoto} alt="" draggable="false" />
         {loading ? (
@@ -1272,6 +1284,7 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
           </a>
         </div>
       </section>
+      </BorderGlow>
     </div>
   )
 }
@@ -1286,7 +1299,18 @@ function SpotifyCard({ spotify }) {
   const progress = Math.min(100, Math.max(0, ((nowMs - started) / (ended - started)) * 100))
 
   return (
-    <section className={`spotify-card ${isListening ? '' : 'inactive'}`} ref={tiltRef}>
+    <BorderGlow
+      className="card-glow-wrap"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      glowColor="200 100 78"
+      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+      glowRadius={32}
+      edgeSensitivity={20}
+      glowIntensity={1.1}
+      coneSpread={22}
+    >
+      <section className={`spotify-card ${isListening ? '' : 'inactive'}`} ref={tiltRef}>
       <Disc3 className="spotify-bg-icon" />
       <div className="section-title-row">
         <h2>What i'm playing now.</h2>
@@ -1336,7 +1360,8 @@ function SpotifyCard({ spotify }) {
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </BorderGlow>
   )
 }
 
@@ -1410,7 +1435,18 @@ function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
     .replace(/<h3>\s*My Specs\s*<\/h3>/gi, '')
   const badgeList = useMemo(() => parseCustomSocials(customSocials) || socials, [customSocials])
   return (
-    <section className="section-card about-card" ref={tiltRef}>
+    <BorderGlow
+      className="card-glow-wrap"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      glowColor="200 100 78"
+      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+      glowRadius={32}
+      edgeSensitivity={20}
+      glowIntensity={1.1}
+      coneSpread={22}
+    >
+      <section className="section-card about-card" ref={tiltRef}>
       <div className="section-title-row">
         <h2>About Me</h2>
         <div className="social-badges">
@@ -1430,7 +1466,8 @@ function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
           </button>
         </div>
       </div>
-    </section>
+      </section>
+    </BorderGlow>
   )
 }
 
@@ -1565,7 +1602,18 @@ function SongsCard() {
   const isTrackMode = mode === 'recent' || mode === 'top'
 
   return (
-    <section className="section-card songs-card" ref={tiltRef}>
+    <BorderGlow
+      className="card-glow-wrap songs-card-glow"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      glowColor="200 100 78"
+      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+      glowRadius={32}
+      edgeSensitivity={20}
+      glowIntensity={1.1}
+      coneSpread={22}
+    >
+      <section className="section-card songs-card" ref={tiltRef}>
       <div className="section-title-row">
         <h2>{SONGS_MODE_TITLE[mode]}</h2>
         <div className="song-controls">
@@ -1701,7 +1749,8 @@ function SongsCard() {
           ))}
         </div>
       ) : null}
-    </section>
+      </section>
+    </BorderGlow>
   )
 }
 
@@ -1712,7 +1761,18 @@ function ActivitiesCard({ activities, serverStats }) {
   )
 
   return (
-    <section className="mini-card" ref={tiltRef}>
+    <BorderGlow
+      className="card-glow-wrap"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      glowColor="200 100 78"
+      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+      glowRadius={32}
+      edgeSensitivity={20}
+      glowIntensity={1.1}
+      coneSpread={22}
+    >
+      <section className="mini-card" ref={tiltRef}>
       <div className="mini-card-header">
         <h2>Current Activities</h2>
         {serverStats?.onlineCount != null && (
@@ -1752,7 +1812,8 @@ function ActivitiesCard({ activities, serverStats }) {
           </div>
         )}
       </div>
-    </section>
+      </section>
+    </BorderGlow>
   )
 }
 
@@ -1823,7 +1884,18 @@ function GamesCard() {
   const clampedPage = Math.min(page, pageCount - 1)
 
   return (
-    <section className="section-card games-card" ref={tiltRef}>
+    <BorderGlow
+      className="card-glow-wrap"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      glowColor="200 100 78"
+      colors={['#8fd8ff', '#b0d8ff', '#6ec8ff']}
+      glowRadius={32}
+      edgeSensitivity={20}
+      glowIntensity={1.1}
+      coneSpread={22}
+    >
+      <section className="section-card games-card" ref={tiltRef}>
       <div className="section-title-row">
         <h2>Recently Played</h2>
         <div className="icon-actions">
@@ -1898,7 +1970,8 @@ function GamesCard() {
           </div>
         </div>
       )}
-    </section>
+      </section>
+    </BorderGlow>
   )
 }
 

@@ -22,9 +22,11 @@ const BorderGlow = ({
   fillOpacity = 0.5,
 }) => {
   const cardRef = useRef(null);
+  const glowRef = useRef(null);
+  const rafRef = useRef(0);
+  const pointRef = useRef(null);
 
-  const getEdgeProximity = useCallback((el, x, y) => {
-    const { width, height } = el.getBoundingClientRect();
+  const getEdgeProximity = useCallback((width, height, x, y) => {
     const cx = width / 2;
     const cy = height / 2;
     const dx = x - cx;
@@ -35,8 +37,7 @@ const BorderGlow = ({
     return Math.min(Math.max(1 / Math.min(kx, ky), 0), 1);
   }, []);
 
-  const getCursorAngle = useCallback((el, x, y) => {
-    const { width, height } = el.getBoundingClientRect();
+  const getCursorAngle = useCallback((width, height, x, y) => {
     const dx = x - width / 2;
     const dy = y - height / 2;
     if (dx === 0 && dy === 0) return 0;
@@ -45,23 +46,26 @@ const BorderGlow = ({
     return deg;
   }, []);
 
-  const handlePointerMove = useCallback((e) => {
+  const applyGlow = useCallback(() => {
+    rafRef.current = 0;
     const card = cardRef.current;
-    if (!card || disabled) return;
+    const glow = glowRef.current;
+    const point = pointRef.current;
+    if (!card || !glow || !point || disabled) return;
 
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = point.x - rect.left;
+    const y = point.y - rect.top;
 
-    const edge = getEdgeProximity(card, x, y);
+    const edge = getEdgeProximity(rect.width, rect.height, x, y);
     const intensity = Math.max(0, (edge * 100 - edgeSensitivity) / (100 - edgeSensitivity));
 
     if (intensity <= 0) {
-      card.style.boxShadow = '';
+      glow.style.boxShadow = '';
       return;
     }
 
-    const angle = getCursorAngle(card, x, y);
+    const angle = getCursorAngle(rect.width, rect.height, x, y);
     const rad = angle * Math.PI / 180;
     const ox = Math.sin(rad) * 22 * intensity;
     const oy = -Math.cos(rad) * 22 * intensity;
@@ -71,7 +75,7 @@ const BorderGlow = ({
     const hsl = `${h}deg ${s}% ${l}%`;
     const a = (base) => Math.min(base * intensity * glowIntensity, 1).toFixed(3);
 
-    card.style.boxShadow = [
+    glow.style.boxShadow = [
       `0 0 14px 3px hsl(${hsl} / ${a(0.30)})`,
       `${f(ox)} ${f(oy)} 28px 5px hsl(${hsl} / ${a(0.22)})`,
       `${f(ox * 1.5)} ${f(oy * 1.5)} 50px 8px hsl(${hsl} / ${a(0.14)})`,
@@ -79,16 +83,31 @@ const BorderGlow = ({
     ].join(', ');
   }, [disabled, edgeSensitivity, glowColor, glowIntensity, getEdgeProximity, getCursorAngle]);
 
+  const handlePointerMove = useCallback((e) => {
+    pointRef.current = { x: e.clientX, y: e.clientY };
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(applyGlow);
+    }
+  }, [applyGlow]);
+
   const handlePointerLeave = useCallback(() => {
-    const card = cardRef.current;
-    if (card) card.style.boxShadow = '';
+    pointRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    if (glowRef.current) glowRef.current.style.boxShadow = '';
   }, []);
 
   useEffect(() => {
-    if (disabled && cardRef.current) {
-      cardRef.current.style.boxShadow = '';
+    if (disabled && glowRef.current) {
+      glowRef.current.style.boxShadow = '';
     }
   }, [disabled]);
+
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  }, []);
 
   return (
     <div
@@ -101,6 +120,7 @@ const BorderGlow = ({
         '--border-radius': `${borderRadius}px`,
       }}
     >
+      <span ref={glowRef} className="border-glow-layer" aria-hidden="true" />
       {children}
     </div>
   );

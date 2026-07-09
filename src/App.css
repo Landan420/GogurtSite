@@ -243,20 +243,6 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   padding-top: 42px;
 }
 
-.profile-panel,
-.spotify-card,
-.mini-card,
-.section-card {
-  transition: transform 220ms ease-out;
-}
-
-.profile-panel:hover,
-.spotify-card:hover,
-.mini-card:hover,
-.section-card:hover {
-  will-change: transform;
-}
-
 .profile-card,
 .spotify-card,
 .section-card,
@@ -3703,14 +3689,6 @@ input[type='range'] {
   font-size: 11px;
   color: #50e696;
   letter-spacing: 0.08em;
-}
-
-/* ── card transitions (BorderGlow handles hover glow) ── */
-.profile-card,
-.spotify-card,
-.section-card,
-.mini-card {
-  transition: transform 220ms ease-out;
 }
 
 /* ── avatar ring reacts to music ─────────────────── */

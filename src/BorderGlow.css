@@ -2,11 +2,23 @@
   --border-radius: 8px;
 
   position: relative;
+  isolation: isolate;
   border-radius: var(--border-radius);
   display: grid;
   border: none;
   background: transparent;
   box-shadow: none;
   overflow: visible;
-  transition: box-shadow 0.6s ease-out;
+}
+
+/* Dedicated glow layer: shadow repaints happen on this empty,
+   GPU-composited element so card text/icons are never repainted. */
+.border-glow-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  transform: translateZ(0);
+  transition: box-shadow 0.45s ease-out;
 }

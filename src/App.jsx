@@ -1276,6 +1276,18 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
             <ExternalLink size={9} />
             vanillabrice.pages.dev
           </a>
+          <a href="https://floatyt.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
+            <ExternalLink size={9} />
+            floatyt.pages.dev
+          </a>
+          <a href="https://quibbish.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
+            <ExternalLink size={9} />
+            quibbish.pages.dev
+          </a>
+          <a href="https://tripletfloat.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
+            <ExternalLink size={9} />
+            tripletfloat.pages.dev
+          </a>
         </div>
       </section>
       </BorderGlow>

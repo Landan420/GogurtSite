@@ -1283,7 +1283,12 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
           <a href="https://quibbish.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
             <ExternalLink size={9} />
             quibbish.pages.dev
-          </a>        </div>
+          </a>
+          <a href="https://tawnic.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
+            <ExternalLink size={9} />
+            tawnic.pages.dev
+          </a>
+        </div>
       </section>
       </BorderGlow>
     </div>

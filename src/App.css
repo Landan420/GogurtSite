@@ -3966,7 +3966,7 @@ input[type='range'] {
   will-change: opacity, transform, filter;
 }
 
-.reveal-in {
+.reveal[data-revealed] {
   opacity: 1;
   transform: none;
   filter: none;

@@ -775,6 +775,10 @@ function useTilt(maxDeg = 2.5) {
  * Reveals anything tagged `.reveal` as it scrolls into view, staggering
  * siblings so a row of cards arrives one after another instead of all at once.
  * Elements that mount later (async cards) get picked up by the MutationObserver.
+ *
+ * The revealed flag is a data attribute, not a class: BorderGlow rebuilds its
+ * whole className from props, so a class added out here gets wiped the moment
+ * one of those props changes (e.g. `disabled` flipping when data lands).
  */
 function useScrollReveal() {
   useEffect(() => {
@@ -784,7 +788,7 @@ function useScrollReveal() {
     const io = reduced ? null : new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue
-        entry.target.classList.add('reveal-in')
+        entry.target.setAttribute('data-revealed', '')
         io.unobserve(entry.target)
       }
     }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' })
@@ -793,9 +797,17 @@ function useScrollReveal() {
       for (const el of document.querySelectorAll('.reveal')) {
         if (seen.has(el)) continue
         seen.add(el)
-        if (reduced) { el.classList.add('reveal-in'); continue }
+        if (reduced) { el.setAttribute('data-revealed', ''); continue }
         const siblings = Array.from(el.parentElement?.children || []).filter(n => n.classList.contains('reveal'))
         el.style.setProperty('--reveal-delay', `${Math.max(0, siblings.indexOf(el)) * 90}ms`)
+
+        /* already on screen when it mounted — reveal it outright rather than
+           waiting on the observer, so a card can never sit there invisible */
+        const rect = el.getBoundingClientRect()
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.setAttribute('data-revealed', '')
+          continue
+        }
         io.observe(el)
       }
     }

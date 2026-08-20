@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  ArrowUpRight,
   BarChart3,
   Check,
   ChevronLeft,
@@ -1332,28 +1333,6 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
             <Terminal size={12} />
             <span className="badge-label">Self-Hosted</span>
           </div>
-        </div>
-        <div className="profile-site-links">
-          <a href="https://ihymich.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
-            <ExternalLink size={9} />
-            ihymich.pages.dev
-          </a>
-          <a href="https://vanillabrice.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
-            <ExternalLink size={9} />
-            vanillabrice.pages.dev
-          </a>
-          <a href="https://floatyt.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
-            <ExternalLink size={9} />
-            floatyt.pages.dev
-          </a>
-          <a href="https://quibbish.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
-            <ExternalLink size={9} />
-            quibbish.pages.dev
-          </a>
-          <a href="https://tawnic.pages.dev" target="_blank" rel="noreferrer" className="site-link-pill">
-            <ExternalLink size={9} />
-            tawnic.pages.dev
-          </a>
         </div>
       </section>
       </BorderGlow>
@@ -3308,6 +3287,75 @@ function AdminPanel() {
   )
 }
 
+/* The other sites, pulled out of the profile card into their own launcher. */
+const SITE_LINKS = [
+  { name: 'ihymich',      host: 'ihymich.pages.dev',      hue: 200 },
+  { name: 'vanillabrice', host: 'vanillabrice.pages.dev', hue: 275 },
+  { name: 'floatyt',      host: 'floatyt.pages.dev',      hue: 150 },
+  { name: 'quibbish',     host: 'quibbish.pages.dev',     hue: 30  },
+  { name: 'tawnic',       host: 'tawnic.pages.dev',       hue: 330 },
+]
+
+function SiteDock() {
+  const [open, setOpen] = useState(false)
+  const dockRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    const onDown = (e) => { if (!dockRef.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [open])
+
+  return (
+    <div className={`site-dock${open ? ' site-dock--open' : ''}`} ref={dockRef}>
+      <div className="site-dock-panel" role="menu" aria-label="Other sites">
+        <span className="site-dock-caption">gateway</span>
+        {SITE_LINKS.map((site, i) => (
+          <a
+            key={site.host}
+            className="site-dock-item"
+            href={`https://${site.host}`}
+            target="_blank"
+            rel="noreferrer"
+            role="menuitem"
+            tabIndex={open ? 0 : -1}
+            style={{ '--i': SITE_LINKS.length - 1 - i, '--h': `${site.hue}deg` }}
+          >
+            <span className="site-dock-mono" aria-hidden="true">{site.name[0]}</span>
+            <span className="site-dock-text">
+              <strong>{site.name}</strong>
+              <small>{site.host}</small>
+            </span>
+            <ArrowUpRight className="site-dock-go" size={13} />
+          </a>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="site-dock-trigger"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-label={open ? 'Hide other sites' : 'Show other sites'}
+      >
+        <span className="site-dock-stack" aria-hidden="true">
+          <i style={{ '--h': '200deg' }} />
+          <i style={{ '--h': '275deg' }} />
+          <i style={{ '--h': '330deg' }} />
+        </span>
+        <span className="site-dock-label">{open ? 'close' : 'more sites'}</span>
+        <span className="site-dock-count">{SITE_LINKS.length}</span>
+      </button>
+    </div>
+  )
+}
+
 function HardwareWarning() {
   const [visible, setVisible] = useState(false)
 
@@ -3423,6 +3471,7 @@ export default function App() {
         <GuestbookCard />
       </section>
       {specsOpen && <SpecsModal onClose={() => setSpecsOpen(false)} />}
+      <SiteDock />
       <HardwareWarning />
       <span className="dev-tag">made by landan</span>
       <SiteStatsTag />

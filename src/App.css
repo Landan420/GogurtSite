@@ -201,8 +201,9 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   margin-top: 16px;
 }
 
-.top-grid > *,
-.bottom-grid > * {
+/* the hero row is above the fold, so it animates on load; everything below
+   waits for the scroll reveal instead (see `.reveal`) */
+.top-grid > * {
   opacity: 0.001;
   pointer-events: none;
   animation: entrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -214,14 +215,6 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
 
 .top-grid > *:nth-child(2) {
   animation-delay: 0.2s;
-}
-
-.bottom-grid > *:nth-child(1) {
-  animation-delay: 0.3s;
-}
-
-.bottom-grid > *:nth-child(2) {
-  animation-delay: 0.4s;
 }
 
 @keyframes entrance {
@@ -426,6 +419,48 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   border-radius: 999px;
   object-fit: cover;
   background: #101217;
+}
+
+.raccoon-refresh {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(159, 216, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.92);
+  color: #d8f0ff;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.raccoon-refresh:hover {
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.14);
+  transform: scale(1.08);
+}
+
+.raccoon-refresh:disabled {
+  cursor: default;
+  transform: none;
+}
+
+.raccoon-refresh--busy svg {
+  animation: raccoonSpin 0.8s linear infinite;
+}
+
+@keyframes raccoonSpin {
+  to { transform: rotate(360deg); }
 }
 
 .status-dot {
@@ -2231,13 +2266,10 @@ input[type='range'] {
   min-height: auto;
 }
 
-/* margin + entrance live on the glow wrapper so the glow layer and the
-   visible card stay aligned (glow is inset:0 of the wrapper) */
+/* margin lives on the glow wrapper so the glow layer and the visible card
+   stay aligned (glow is inset:0 of the wrapper) */
 .games-card-glow {
   margin-top: 16px;
-  opacity: 0.001;
-  pointer-events: none;
-  animation: entrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s forwards;
 }
 
 .games-grid {
@@ -3905,11 +3937,682 @@ input[type='range'] {
 
   .top-grid > *,
   .bottom-grid > *,
-  .games-card-glow {
+  .games-card-glow,
+  .reveal,
+  .gb-note,
+  .rank-row,
+  .rank-fill {
     opacity: 1;
     transform: none;
     pointer-events: auto;
     animation: none;
+    filter: none;
   }
 }
 
+
+/* ══ scroll reveal ═══════════════════════════════════
+   Cards below the fold arrive as you reach them, staggered by their
+   position in the row. `--reveal-delay` is set in JS by useScrollReveal. */
+.reveal {
+  opacity: 0.001;
+  transform: translateY(26px) scale(0.985);
+  filter: blur(7px);
+  transition:
+    opacity 0.72s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.72s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.6s ease;
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.reveal-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  will-change: auto;
+}
+
+/* ══ games — ranked hours view ═══════════════════════ */
+.games-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.icon-actions .games-view-toggle button {
+  width: 28px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  transition: color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+}
+
+.icon-actions .games-view-toggle button:hover {
+  color: var(--text-soft);
+}
+
+.icon-actions .games-view-toggle button.active {
+  color: rgb(var(--accent-rgb));
+  background: rgba(var(--accent-rgb), 0.14);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.3);
+}
+
+.rank-list {
+  display: grid;
+  gap: 5px;
+  max-height: 428px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  animation: rankIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i) * 34ms);
+}
+
+.rank-num {
+  font: 600 11px/1 var(--mono);
+  color: var(--text-dim);
+  text-align: right;
+  transition: color 220ms ease, text-shadow 220ms ease;
+}
+
+.rank-row:nth-child(-n + 3) .rank-num {
+  color: rgba(var(--accent-rgb), 0.9);
+  text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.45);
+}
+
+.rank-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.028);
+  overflow: hidden;
+}
+
+/* the coloured bar itself — grows to `--pct` of the top game's hours */
+.rank-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pct, 0%);
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.42) 0%,
+    rgba(var(--accent-rgb), 0.16) 100%
+  );
+  box-shadow: inset -1px 0 0 rgba(var(--accent-rgb), 0.55);
+  animation: rankGrow 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i) * 34ms + 60ms);
+}
+
+/* the game's own capsule art, ghosted into its bar */
+.rank-art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 32%;
+  opacity: 0.3;
+  mix-blend-mode: luminosity;
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.35) 78%, transparent 100%);
+  transition: opacity 260ms ease;
+}
+
+/* the slice of the bar that is playtime from the last two weeks */
+.rank-recent {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--recent-pct, 0%);
+  min-width: 3px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+.rank-name,
+.rank-hours {
+  position: relative;
+  z-index: 2;
+}
+
+.rank-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.rank-hours {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font: 600 12px/1 var(--mono);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.rank-hours em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-dim);
+  margin-left: 1px;
+}
+
+.rank-hours b {
+  font: 500 9.5px/1 var(--mono);
+  color: rgba(var(--accent-rgb), 0.85);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.rank-row:hover .rank-bar {
+  border-color: rgba(var(--accent-rgb), 0.32);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rank-row:hover .rank-art {
+  opacity: 0.55;
+}
+
+.rank-row:hover .rank-hours b {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes rankGrow {
+  from { width: 0%; }
+  to   { width: var(--pct, 0%); }
+}
+
+@keyframes rankIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ══ guestbook ═══════════════════════════════════════ */
+.guestbook-card-glow {
+  margin-top: 16px;
+}
+
+.guestbook-card {
+  overflow: visible;
+  min-height: auto;
+}
+
+.gb-count {
+  font: 500 10.5px/1 var(--mono);
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.icon-actions .gb-sign-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: 32px;
+  padding: 0 12px;
+  font: 600 11.5px/1 var(--mono);
+  color: rgba(var(--accent-rgb), 0.92);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.icon-actions .gb-sign-btn:hover {
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.22);
+}
+
+.icon-actions .gb-sign-btn.active {
+  color: var(--text-soft);
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gb-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.04);
+  animation: gbFormIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gb-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 10px;
+}
+
+.gb-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.gb-field > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font: 500 10px/1 var(--mono);
+  color: var(--text-dim);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gb-field > span i {
+  font-style: normal;
+  opacity: 0.65;
+  text-transform: none;
+  letter-spacing: 0.03em;
+}
+
+.gb-input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  font: 13px/1.5 var(--sans);
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.gb-input::placeholder {
+  color: var(--text-dim);
+}
+
+.gb-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+.gb-textarea {
+  resize: vertical;
+  min-height: 64px;
+  font-family: var(--sans);
+}
+
+.gb-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.13);
+  border-radius: 7px;
+}
+
+.gb-preview img {
+  max-height: 88px;
+  max-width: 160px;
+  border-radius: 5px;
+  display: block;
+}
+
+.gb-preview small {
+  font: 500 10px/1 var(--mono);
+  color: var(--text-dim);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gb-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.gb-error {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #ff9a9a;
+}
+
+.gb-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  justify-self: start;
+  padding: 9px 18px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 7px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: rgb(var(--accent-rgb));
+  font: 600 12px/1 var(--mono);
+  cursor: pointer;
+  transition: background 200ms ease, box-shadow 200ms ease, opacity 200ms ease;
+}
+
+.gb-submit:hover:not(:disabled) {
+  background: rgba(var(--accent-rgb), 0.22);
+  box-shadow: 0 0 22px rgba(var(--accent-rgb), 0.25);
+}
+
+.gb-submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+/* the wall of notes — multi-column so gif-heavy notes pack tightly */
+.gb-wall {
+  columns: 3;
+  column-gap: 12px;
+}
+
+.gb-note {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 14px 14px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
+    rgba(10, 12, 17, 0.6);
+  break-inside: avoid;
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 260ms ease, box-shadow 260ms ease;
+  animation: gbNoteIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+.gb-note:hover {
+  transform: rotate(0deg) translateY(-3px);
+  border-color: rgba(var(--accent-rgb), 0.32);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.42);
+}
+
+/* strip of "tape" across the top corner, tinted per signer */
+.gb-tape {
+  position: absolute;
+  top: -6px;
+  left: 18px;
+  width: 46px;
+  height: 13px;
+  border-radius: 2px;
+  background: rgba(var(--accent-rgb), 0.3);
+  filter: hue-rotate(var(--hue, 0deg)) saturate(0.75);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  opacity: 0.7;
+}
+
+.gb-note header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.gb-note header strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-h);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gb-note header time {
+  flex: none;
+  font: 500 9.5px/1 var(--mono);
+  color: var(--text-dim);
+}
+
+.gb-note p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.gb-media {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.gb-media img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gb-media:hover img {
+  transform: scale(1.04);
+}
+
+.gb-note--skeleton {
+  height: 104px;
+  border-style: dashed;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.gb-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: rgba(4, 5, 8, 0.86);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.2s ease;
+}
+
+.gb-lightbox figure {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: min(880px, 92vw);
+  animation: modalIn 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gb-lightbox img {
+  max-width: 100%;
+  max-height: 72vh;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+
+.gb-lightbox figcaption {
+  max-width: 60ch;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+.gb-lightbox-close {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+}
+
+@keyframes gbNoteIn {
+  from { opacity: 0; transform: rotate(var(--tilt, 0deg)) translateY(14px); }
+  to   { opacity: 1; transform: rotate(var(--tilt, 0deg)); }
+}
+
+@keyframes gbFormIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ══ guestbook moderation (admin) ════════════════════ */
+.gbm-tally {
+  font: 500 11px/1 var(--mono);
+  color: var(--text-dim);
+}
+
+.gbm-empty {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.gbm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.gbm-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.gbm-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.gbm-meta strong {
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.gbm-meta time {
+  font: 500 10px/1 var(--mono);
+  color: var(--text-dim);
+}
+
+.gbm-body p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.gbm-media {
+  display: inline-block;
+  margin-top: 9px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.gbm-media img {
+  display: block;
+  max-height: 130px;
+  max-width: 240px;
+}
+
+.gbm-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.gbm-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+  font: 600 11px/1 var(--mono);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.gbm-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.gbm-actions .gbm-approve {
+  color: rgb(var(--accent-rgb));
+  border-color: rgba(var(--accent-rgb), 0.32);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.gbm-actions .gbm-delete:hover:not(:disabled) {
+  color: #ff9a9a;
+  border-color: rgba(255, 120, 120, 0.35);
+  background: rgba(255, 90, 90, 0.1);
+}
+
+@media (max-width: 900px) {
+  .gb-wall { columns: 2; }
+  .gb-form-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .gb-wall { columns: 1; }
+  .rank-list { max-height: 360px; }
+  .rank-hours b { display: none; }
+  .gbm-row { flex-direction: column; }
+}

@@ -7,6 +7,8 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  BarChart3,
+  Check,
   ChevronLeft,
   ChevronRight,
   CircuitBoard,
@@ -22,14 +24,17 @@ import {
   HardDrive,
   Headphones,
   Keyboard,
+  LayoutGrid,
   Link as LinkIcon,
   MemoryStick,
   Monitor,
   Mouse,
   Music2,
+  PenLine,
   Plus,
   RefreshCw,
   Search,
+  Send,
   Smartphone,
   Terminal,
   Ticket,
@@ -766,6 +771,43 @@ function useTilt(maxDeg = 2.5) {
   return ref
 }
 
+/*
+ * Reveals anything tagged `.reveal` as it scrolls into view, staggering
+ * siblings so a row of cards arrives one after another instead of all at once.
+ * Elements that mount later (async cards) get picked up by the MutationObserver.
+ */
+function useScrollReveal() {
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const seen = new WeakSet()
+
+    const io = reduced ? null : new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        entry.target.classList.add('reveal-in')
+        io.unobserve(entry.target)
+      }
+    }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' })
+
+    function scan() {
+      for (const el of document.querySelectorAll('.reveal')) {
+        if (seen.has(el)) continue
+        seen.add(el)
+        if (reduced) { el.classList.add('reveal-in'); continue }
+        const siblings = Array.from(el.parentElement?.children || []).filter(n => n.classList.contains('reveal'))
+        el.style.setProperty('--reveal-delay', `${Math.max(0, siblings.indexOf(el)) * 90}ms`)
+        io.observe(el)
+      }
+    }
+
+    scan()
+    const mo = new MutationObserver(scan)
+    mo.observe(document.body, { childList: true, subtree: true })
+
+    return () => { mo.disconnect(); io?.disconnect() }
+  }, [])
+}
+
 function useServerStats() {
   const [stats, setStats] = useState(null)
 
@@ -1156,7 +1198,7 @@ function UploadsPage() {
   )
 }
 
-function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customHandle }) {
+function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customHandle, onNewRaccoon, raccoonBusy }) {
   const now = useClock()
   const timeText = new Intl.DateTimeFormat('en-US', {
     timeZone: HOME_TIMEZONE,
@@ -1202,6 +1244,18 @@ function ProfileCard({ profile, loading, nameStyle = 'neon', customName, customH
         <div className="profile-main">
           <div className={`avatar-wrap${profile.spotify ? ' avatar-wrap--playing' : ''}`}>
             <img className="avatar" src={profile.avatarUrl} alt="Profile" draggable="false" />
+            {onNewRaccoon && (
+              <button
+                type="button"
+                className={`raccoon-refresh${raccoonBusy ? ' raccoon-refresh--busy' : ''}`}
+                onClick={onNewRaccoon}
+                disabled={raccoonBusy}
+                title="get a new raccoon"
+                aria-label="Get a new raccoon picture"
+              >
+                <RefreshCw size={13} />
+              </button>
+            )}
           </div>
           <div className="name-block">
             <h1>
@@ -1434,7 +1488,7 @@ function AboutCard({ onOpenSpecs, aboutBio, customSocials }) {
   const badgeList = useMemo(() => parseCustomSocials(customSocials) || socials, [customSocials])
   return (
     <BorderGlow
-      className="card-glow-wrap"
+      className="card-glow-wrap reveal"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
     >
@@ -1594,7 +1648,7 @@ function SongsCard() {
 
   return (
     <BorderGlow
-      className="card-glow-wrap songs-card-glow"
+      className="card-glow-wrap songs-card-glow reveal"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
       disabled={statsLoading || refreshing}
@@ -1849,6 +1903,14 @@ const GAMES_PER_PAGE = 4
 function GamesCard() {
   const { games, loading } = useRecentGames()
   const [page, setPage] = useState(0)
+  const [view, setView] = useState('grid')
+
+  /* Ranked view sorts by lifetime hours so the bars read as a leaderboard. */
+  const ranked = useMemo(
+    () => [...games].sort((a, b) => (b.hoursTotal || 0) - (a.hoursTotal || 0)),
+    [games],
+  )
+  const topHours = ranked[0]?.hoursTotal || 1
 
   const pageChunks = useMemo(() => {
     const chunks = []
@@ -1863,16 +1925,36 @@ function GamesCard() {
 
   return (
     <BorderGlow
-      className="card-glow-wrap games-card-glow"
+      className="card-glow-wrap games-card-glow reveal"
       backgroundColor="rgba(13,15,20,0.78)"
       borderRadius={8}
       disabled={loading}
     >
       <section className="section-card games-card">
       <div className="section-title-row">
-        <h2>Recently Played</h2>
+        <h2>{view === 'ranked' ? 'Most Played' : 'Recently Played'}</h2>
         <div className="icon-actions">
-          {pageCount > 1 ? (
+          <div className="games-view-toggle" role="group" aria-label="Games layout">
+            <button
+              type="button"
+              className={view === 'grid' ? 'active' : ''}
+              onClick={() => setView('grid')}
+              aria-label="Tile view"
+              aria-pressed={view === 'grid'}
+            >
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              type="button"
+              className={view === 'ranked' ? 'active' : ''}
+              onClick={() => setView('ranked')}
+              aria-label="Ranked hours view"
+              aria-pressed={view === 'ranked'}
+            >
+              <BarChart3 size={14} />
+            </button>
+          </div>
+          {view === 'grid' && pageCount > 1 ? (
             <>
               <button
                 type="button"
@@ -1915,6 +1997,44 @@ function GamesCard() {
         </div>
       ) : games.length === 0 ? (
         <div className="song-empty">No recently played games.</div>
+      ) : view === 'ranked' ? (
+        <div className="rank-list" key="ranked">
+          {ranked.map((game, i) => {
+            const hours = game.hoursTotal || 0
+            const recentShare = hours > 0 && game.hoursRecent
+              ? Math.min(100, (game.hoursRecent / hours) * 100)
+              : 0
+            return (
+              <a
+                key={game.appid}
+                className="rank-row"
+                href={`https://store.steampowered.com/app/${game.appid}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  '--pct': `${Math.max(6, (hours / topHours) * 100).toFixed(2)}%`,
+                  '--recent-pct': `${recentShare.toFixed(2)}%`,
+                  '--i': i,
+                }}
+              >
+                <span className="rank-num">{pad(i + 1)}</span>
+                <span className="rank-bar">
+                  <span className="rank-fill">
+                    {game.headerUrl ? (
+                      <span className="rank-art" style={{ backgroundImage: `url(${game.headerUrl})` }} />
+                    ) : null}
+                    {recentShare > 0 ? <span className="rank-recent" /> : null}
+                  </span>
+                  <span className="rank-name">{game.name}</span>
+                  <span className="rank-hours">
+                    {hours.toLocaleString(undefined, { maximumFractionDigits: 1 })}<em>h</em>
+                    {game.hoursRecent ? <b>+{game.hoursRecent} recent</b> : null}
+                  </span>
+                </span>
+              </a>
+            )
+          })}
+        </div>
       ) : (
         <div className="games-viewport">
           <div className="games-track" style={{ transform: `translateX(-${clampedPage * 100}%)` }}>
@@ -1943,6 +2063,223 @@ function GamesCard() {
           </div>
         </div>
       )}
+      </section>
+    </BorderGlow>
+  )
+}
+
+const GUESTBOOK_NAME_MAX = 24
+const GUESTBOOK_MESSAGE_MAX = 200
+const GUESTBOOK_HOSTS = 'imgur · tenor · giphy · discord · instagram · reddit · twitter'
+
+/* Small deterministic hash so each signer keeps the same tilt and hue. */
+function stringSeed(value) {
+  let h = 0
+  for (let i = 0; i < value.length; i += 1) h = (h * 31 + value.charCodeAt(i)) % 100000
+  return h
+}
+
+function GuestbookCard() {
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [composing, setComposing] = useState(false)
+  /* repeat visitors keep their name so they don't retype it every time */
+  const [form, setForm] = useState(() => ({
+    name: localStorage.getItem('gb_name') || '',
+    message: '',
+    media_url: '',
+  }))
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const [zoomed, setZoomed] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/guestbook')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (cancelled) return
+        setEntries(data?.entries || [])
+        setLoading(false)
+      })
+      .catch(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!zoomed) return
+    const onKey = (e) => { if (e.key === 'Escape') setZoomed(null) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [zoomed])
+
+  async function submit(e) {
+    e.preventDefault()
+    if (sending) return
+    setSending(true); setError('')
+    try {
+      const res = await fetch('/api/guestbook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`)
+      localStorage.setItem('gb_name', form.name)
+      setSent(true)
+      setForm(f => ({ name: f.name, message: '', media_url: '' }))
+      setTimeout(() => { setSent(false); setComposing(false) }, 3200)
+    } catch (err) {
+      setError(err.message || 'Could not send that.')
+    }
+    setSending(false)
+  }
+
+  const previewUrl = /^https:\/\/\S+$/i.test(form.media_url.trim()) ? form.media_url.trim() : ''
+
+  return (
+    <BorderGlow
+      className="card-glow-wrap guestbook-card-glow reveal"
+      backgroundColor="rgba(13,15,20,0.78)"
+      borderRadius={8}
+      disabled={loading}
+    >
+      <section className="section-card guestbook-card">
+        <div className="section-title-row">
+          <h2>Guestbook</h2>
+          <div className="icon-actions">
+            <span className="gb-count">{entries.length} signed</span>
+            <button
+              type="button"
+              className={`gb-sign-btn${composing ? ' active' : ''}`}
+              onClick={() => { setComposing(v => !v); setError('') }}
+            >
+              {composing ? <X size={14} /> : <PenLine size={14} />}
+              {composing ? 'close' : 'sign it'}
+            </button>
+          </div>
+        </div>
+
+        {composing ? (
+          <form className="gb-form" onSubmit={submit}>
+            <div className="gb-form-row">
+              <label className="gb-field gb-field--name">
+                <span>name</span>
+                <input
+                  className="gb-input"
+                  value={form.name}
+                  maxLength={GUESTBOOK_NAME_MAX}
+                  placeholder="who are you"
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  required
+                />
+              </label>
+              <label className="gb-field gb-field--media">
+                <span>gif / image link <i>optional</i></span>
+                <input
+                  className="gb-input"
+                  value={form.media_url}
+                  placeholder="https://i.imgur.com/….gif"
+                  onChange={e => setForm(f => ({ ...f, media_url: e.target.value }))}
+                />
+              </label>
+            </div>
+            <label className="gb-field">
+              <span>
+                message
+                <i>{form.message.length}/{GUESTBOOK_MESSAGE_MAX}</i>
+              </span>
+              <textarea
+                className="gb-input gb-textarea"
+                value={form.message}
+                maxLength={GUESTBOOK_MESSAGE_MAX}
+                rows={3}
+                placeholder="say something"
+                onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                required
+              />
+            </label>
+            {previewUrl ? (
+              <div className="gb-preview">
+                <img src={previewUrl} alt="" onError={e => { e.currentTarget.style.display = 'none' }} />
+                <small>preview</small>
+              </div>
+            ) : null}
+            <p className="gb-hint">
+              right-click a gif → “copy image address”. allowed hosts: {GUESTBOOK_HOSTS}. everything is
+              reviewed before it shows up.
+            </p>
+            {error ? <p className="gb-error">{error}</p> : null}
+            <button className="gb-submit" type="submit" disabled={sending || sent}>
+              {sent ? <><Check size={14} /> sent for approval</> : sending ? '…' : <><Send size={13} /> sign the book</>}
+            </button>
+          </form>
+        ) : null}
+
+        {loading ? (
+          <div className="gb-wall">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="gb-note gb-note--skeleton" style={{ '--i': i }} />
+            ))}
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="song-empty">nobody has signed yet — be the first.</div>
+        ) : (
+          <div className="gb-wall">
+            {entries.map((entry, i) => {
+              const seed = stringSeed(`${entry.name}${entry.id}`)
+              return (
+                <article
+                  key={entry.id}
+                  className="gb-note"
+                  style={{ '--i': i % 12, '--tilt': `${((seed % 17) - 8) / 10}deg`, '--hue': `${seed % 360}deg` }}
+                >
+                  <span className="gb-tape" aria-hidden="true" />
+                  <header>
+                    <strong>{entry.name}</strong>
+                    <time>{formatRelativeTime(entry.created_at)}</time>
+                  </header>
+                  <p>{entry.message}</p>
+                  {entry.media_url ? (
+                    <button
+                      type="button"
+                      className="gb-media"
+                      onClick={() => setZoomed(entry)}
+                      aria-label={`Open image from ${entry.name}`}
+                    >
+                      <img
+                        src={entry.media_url}
+                        alt=""
+                        loading="lazy"
+                        draggable="false"
+                        onError={e => {
+                          const holder = e.currentTarget.closest('.gb-media')
+                          if (holder) holder.style.display = 'none'
+                        }}
+                      />
+                    </button>
+                  ) : null}
+                </article>
+              )
+            })}
+          </div>
+        )}
+
+        {zoomed ? (
+          <div
+            className="gb-lightbox"
+            onMouseDown={e => { if (e.target === e.currentTarget) setZoomed(null) }}
+          >
+            <figure>
+              <img src={zoomed.media_url} alt="" draggable="false" />
+              <figcaption>{zoomed.name} — {zoomed.message}</figcaption>
+            </figure>
+            <button type="button" className="gb-lightbox-close" onClick={() => setZoomed(null)} aria-label="Close">
+              <X size={18} />
+            </button>
+          </div>
+        ) : null}
       </section>
     </BorderGlow>
   )
@@ -2238,10 +2575,72 @@ function useSiteContent() {
   useEffect(() => {
     fetch('/api/admin/content')
       .then(r => r.ok ? r.json() : {})
-      .then(setContent)
-      .catch(() => {})
+      .then(data => setContent({ ...data, _loaded: true }))
+      .catch(() => setContent({ _loaded: true }))
   }, [])
   return content
+}
+
+// racc.lol rate-limits the random endpoint (5 req / 10s) but serves
+// /raccoon/<index> images unthrottled, so we pick a random index ourselves.
+const RACCOON_COUNT_FALLBACK = 625
+const RACCOON_COUNT_KEY = 'raccoon_count'
+
+async function getRaccoonCount() {
+  const cached = Number(localStorage.getItem(RACCOON_COUNT_KEY))
+  if (cached > 0) return cached
+  try {
+    const res = await fetch('https://api.racc.lol/raccoons?json=true')
+    const data = await res.json()
+    const count = data?.data?.length
+    if (count > 0) {
+      localStorage.setItem(RACCOON_COUNT_KEY, String(count))
+      return count
+    }
+    return RACCOON_COUNT_FALLBACK
+  } catch {
+    return RACCOON_COUNT_FALLBACK
+  }
+}
+
+async function getRandomRaccoon() {
+  try {
+    const count = await getRaccoonCount()
+    const next = `https://api.racc.lol/raccoon/${1 + Math.floor(Math.random() * count)}`
+    const ok = await new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => resolve(false)
+      img.src = next
+    })
+    return ok ? next : null
+  } catch {
+    return null
+  }
+}
+
+function useRaccoonAvatar(enabled) {
+  const [url, setUrl] = useState(null)
+  const [fetching, setFetching] = useState(false)
+
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    getRandomRaccoon().then((next) => {
+      if (next && !cancelled) setUrl(next)
+    })
+    return () => { cancelled = true }
+  }, [enabled])
+
+  async function fetchRaccoon() {
+    if (fetching) return
+    setFetching(true)
+    const next = await getRandomRaccoon()
+    if (next) setUrl(next)
+    setFetching(false)
+  }
+
+  return { raccoonUrl: url, fetchRaccoon, fetchingRaccoon: fetching }
 }
 
 function AdminNav({ active }) {
@@ -2256,6 +2655,127 @@ function AdminNav({ active }) {
         className={`admin-nav-tab${active === 'uploads' ? ' active' : ''}`}
         onClick={() => navigate('/admin/uploads')}
       >uploads</button>
+      <button
+        className={`admin-nav-tab${active === 'guestbook' ? ' active' : ''}`}
+        onClick={() => navigate('/admin/guestbook')}
+      >guestbook</button>
+    </div>
+  )
+}
+
+function AdminGuestbookPanel() {
+  const [verified, setVerified] = useState(false)
+  const [entries, setEntries] = useState([])
+  const [busyId, setBusyId] = useState(null)
+  const [error, setError] = useState('')
+  const { profile: discordProfile } = useDiscordPresence()
+  useAccentColor(discordProfile?.spotify?.album_art_url)
+
+  const token = () => localStorage.getItem('admin_token') || ''
+
+  useEffect(() => {
+    if (!token()) { navigate('/admin'); return }
+    fetch('/api/admin/guestbook', { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => {
+        if (!r.ok) { localStorage.removeItem('admin_token'); navigate('/admin'); return null }
+        return r.json()
+      })
+      .then(data => { if (data) { setEntries(data.entries || []); setVerified(true) } })
+      .catch(() => navigate('/admin'))
+  }, [])
+
+  async function setStatus(id, status) {
+    setBusyId(id); setError('')
+    try {
+      const res = await fetch('/api/admin/guestbook', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ id, status }),
+      })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
+      setEntries(prev => prev.map(e => (e.id === id ? { ...e, status } : e)))
+    } catch (err) { setError(err.message) }
+    setBusyId(null)
+  }
+
+  async function remove(id) {
+    setBusyId(id); setError('')
+    try {
+      const res = await fetch(`/api/admin/guestbook?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token()}` },
+      })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
+      setEntries(prev => prev.filter(e => e.id !== id))
+    } catch (err) { setError(err.message) }
+    setBusyId(null)
+  }
+
+  if (!verified) {
+    return (
+      <div className="admin-shell">
+        <div className="top-rainbow-bar" aria-hidden="true" />
+        <div className="page-backdrop" />
+        <p className="admin-checking">checking session…</p>
+      </div>
+    )
+  }
+
+  const pending = entries.filter(e => e.status !== 'approved')
+  const approved = entries.filter(e => e.status === 'approved')
+
+  const row = (entry) => (
+    <article key={entry.id} className="gbm-row">
+      <div className="gbm-body">
+        <div className="gbm-meta">
+          <strong>{entry.name}</strong>
+          <time>{formatRelativeTime(entry.created_at)}</time>
+        </div>
+        <p>{entry.message}</p>
+        {entry.media_url ? (
+          <a className="gbm-media" href={entry.media_url} target="_blank" rel="noreferrer">
+            <img src={entry.media_url} alt="" loading="lazy" />
+          </a>
+        ) : null}
+      </div>
+      <div className="gbm-actions">
+        {entry.status === 'approved' ? (
+          <button type="button" onClick={() => setStatus(entry.id, 'pending')} disabled={busyId === entry.id}>
+            unpublish
+          </button>
+        ) : (
+          <button type="button" className="gbm-approve" onClick={() => setStatus(entry.id, 'approved')} disabled={busyId === entry.id}>
+            <Check size={14} /> approve
+          </button>
+        )}
+        <button type="button" className="gbm-delete" onClick={() => remove(entry.id)} disabled={busyId === entry.id} aria-label="Delete">
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </article>
+  )
+
+  return (
+    <div className="admin-shell">
+      <div className="top-rainbow-bar" aria-hidden="true" />
+      <div className="page-backdrop" />
+      <AdminNav active="guestbook" />
+      <div className="admin-panel admin-panel--wide">
+        <div className="admin-panel-header">
+          <h2 className="admin-panel-title">
+            <button onClick={() => navigate('/')} className="admin-site-link">site</button> guestbook
+          </h2>
+          <span className="gbm-tally">{pending.length} pending · {approved.length} live</span>
+        </div>
+
+        {error ? <p className="admin-error">{error}</p> : null}
+
+        <p className="admin-section-label">pending</p>
+        {pending.length === 0 ? <p className="gbm-empty">nothing waiting.</p> : pending.map(row)}
+
+        <p className="admin-section-label">live</p>
+        {approved.length === 0 ? <p className="gbm-empty">nothing published yet.</p> : approved.map(row)}
+      </div>
     </div>
   )
 }
@@ -2692,7 +3212,7 @@ function AdminPanel() {
           </label>
 
           <ImageUploadField
-            label="avatar (blank = discord)"
+            label="avatar (blank = random raccoon)"
             value={content.custom_avatar_url || ''}
             onChange={val => setContent(c => ({ ...c, custom_avatar_url: val }))}
             maxW={256} maxH={256}
@@ -2814,6 +3334,7 @@ function SiteStatsTag() {
 export default function App() {
   if (window.location.pathname === '/admin') return <AdminPanel />
   if (window.location.pathname === '/admin/uploads') return <AdminUploadsPanel />
+  if (window.location.pathname === '/admin/guestbook') return <AdminGuestbookPanel />
   if (window.location.pathname === '/uploads') return <UploadsPage />
   if (window.location.pathname === '/trimmer') return <TrimmerPage />
 
@@ -2824,6 +3345,7 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(true)
   const scrollPrev = useRef(0)
   useAccentColor(profile.spotify?.album_art_url)
+  useScrollReveal()
 
   useEffect(() => {
     if (!window.matchMedia('(max-width: 620px)').matches) return
@@ -2837,10 +3359,13 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const usingRaccoon = Boolean(siteContent._loaded && !siteContent.custom_avatar_url)
+  const { raccoonUrl, fetchRaccoon, fetchingRaccoon } = useRaccoonAvatar(usingRaccoon)
+
   const mergedProfile = {
     ...profile,
     customStatus: profile.customStatus || siteContent.custom_status || fallbackProfile.customStatus,
-    avatarUrl: siteContent.custom_avatar_url || profile.avatarUrl,
+    avatarUrl: siteContent.custom_avatar_url || (usingRaccoon && raccoonUrl) || profile.avatarUrl,
     bannerUrl: siteContent.custom_banner_url || profile.bannerUrl,
   }
 
@@ -2870,6 +3395,8 @@ export default function App() {
             nameStyle={siteContent.name_style || 'neon'}
             customName={siteContent.custom_name}
             customHandle={siteContent.custom_handle}
+            onNewRaccoon={usingRaccoon && raccoonUrl ? fetchRaccoon : null}
+            raccoonBusy={fetchingRaccoon}
           />
           <div className="side-stack">
             <SpotifyCard spotify={mergedProfile.spotify} />
@@ -2881,6 +3408,7 @@ export default function App() {
           <SongsCard />
         </div>
         <GamesCard />
+        <GuestbookCard />
       </section>
       {specsOpen && <SpecsModal onClose={() => setSpecsOpen(false)} />}
       <HardwareWarning />

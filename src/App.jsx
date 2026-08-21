@@ -3289,11 +3289,12 @@ function AdminPanel() {
 
 /* The other sites, pulled out of the profile card into their own launcher. */
 const SITE_LINKS = [
-  { name: 'ihymich',      host: 'ihymich.pages.dev',      hue: 200 },
-  { name: 'vanillabrice', host: 'vanillabrice.pages.dev', hue: 275 },
-  { name: 'floatyt',      host: 'floatyt.pages.dev',      hue: 150 },
-  { name: 'quibbish',     host: 'quibbish.pages.dev',     hue: 30  },
-  { name: 'tawnic',       host: 'tawnic.pages.dev',       hue: 330 },
+  { name: 'ihymich',       host: 'ihymich.pages.dev',       hue: 200 },
+  { name: 'vanillabrice',  host: 'vanillabrice.pages.dev',  hue: 275 },
+  { name: 'floatyt',       host: 'floatyt.pages.dev',       hue: 150 },
+  { name: 'quibbish',      host: 'quibbish.pages.dev',      hue: 30  },
+  { name: 'tawnic',        host: 'tawnic.pages.dev',        hue: 330 },
+  { name: 'sparkanalyzer', host: 'sparkanalyzer.pages.dev', hue: 45  },
 ]
 
 function SiteDock() {

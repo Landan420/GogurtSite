@@ -11,11 +11,29 @@ async function initTable(db) {
   ).run()
 }
 
+// ShareX/R2 uploads expire after 14 days (R2 lifecycle rule mops up at 15 as a backstop)
+const R2_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000
+
+async function cleanupExpired(db, bucket) {
+  const cutoff = Date.now() - R2_EXPIRY_MS
+  const { results } = await db.prepare(
+    "SELECT data FROM uploads WHERE data LIKE 'r2:%' AND created_at < ?"
+  ).bind(cutoff).all()
+  if (!results?.length) return
+  if (bucket) {
+    for (const row of results) {
+      try { await bucket.delete(row.data.slice(3)) } catch {}
+    }
+  }
+  await db.prepare("DELETE FROM uploads WHERE data LIKE 'r2:%' AND created_at < ?").bind(cutoff).run()
+}
+
 export async function onRequestGet({ env }) {
   const db = env.VIEWS_DB
   if (!db) return json([])
   try {
     await initTable(db)
+    try { await cleanupExpired(db, env.UPLOADS_R2) } catch {}
     const { results } = await db.prepare(
       'SELECT id, name, ext, description, data, size, created_at FROM uploads ORDER BY created_at DESC'
     ).all()

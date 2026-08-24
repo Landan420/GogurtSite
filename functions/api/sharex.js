@@ -34,6 +34,21 @@ export async function onRequestPost({ request, env }) {
     const ext = (name.includes('.') ? name.split('.').pop() : '').toLowerCase()
 
     await initTable(db)
+
+    // expire old ShareX uploads (14 days) so the bucket stays inside the free tier
+    try {
+      const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000
+      const { results } = await db.prepare(
+        "SELECT data FROM uploads WHERE data LIKE 'r2:%' AND created_at < ?"
+      ).bind(cutoff).all()
+      for (const row of results || []) {
+        try { await bucket.delete(row.data.slice(3)) } catch {}
+      }
+      if (results?.length) {
+        await db.prepare("DELETE FROM uploads WHERE data LIKE 'r2:%' AND created_at < ?").bind(cutoff).run()
+      }
+    } catch {}
+
     const clash = await db.prepare('SELECT id FROM uploads WHERE name = ?').bind(name).first()
     if (clash) name = `${id.slice(0, 8)}-${name}`
 

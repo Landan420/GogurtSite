@@ -65,7 +65,7 @@ export async function onRequestPost({ request, env }) {
     return json({
       ok: true,
       id,
-      url: `${url.origin}/api/raw/${encodeURIComponent(name)}`,
+      url: `${url.origin}/${encodeURIComponent(name)}`,
     })
   } catch (err) {
     return json({ error: err?.message || 'Server error' }, { status: 500 })

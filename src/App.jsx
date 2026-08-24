@@ -1135,14 +1135,18 @@ function UploadsPage() {
     if (!viewingId) return
     const f = files.find(x => x.id === viewingId)
     if (!f || !f.data?.startsWith('r2:') || previewType(f.ext) !== 'text' || textCache[f.id] != null) return
-    fetch(`/api/raw/${encodeURIComponent(f.name)}`)
+    fetch(`/raw/${encodeURIComponent(f.name)}`)
       .then(r => r.text())
       .then(t => setTextCache(c => ({ ...c, [f.id]: t })))
       .catch(() => {})
   }, [viewingId, files, textCache])
 
   function rawUrl(file) {
-    return `${window.location.origin}/api/raw/${encodeURIComponent(file.name)}`
+    return `${window.location.origin}/raw/${encodeURIComponent(file.name)}`
+  }
+
+  function viewerUrl(file) {
+    return `${window.location.origin}/${encodeURIComponent(file.name)}`
   }
 
   function isR2(file) {
@@ -1165,7 +1169,7 @@ function UploadsPage() {
   function copyRaw(file) {
     const url = file.ext === 'lua'
       ? `loadstring(game:HttpGet("${rawUrl(file)}"))()`
-      : rawUrl(file)
+      : viewerUrl(file)
     navigator.clipboard.writeText(url).then(() => {
       showToast(file.ext === 'lua' ? 'loadstring copied!' : 'link copied!')
     })

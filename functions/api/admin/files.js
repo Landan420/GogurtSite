@@ -58,6 +58,10 @@ export async function onRequestDelete({ request, env }) {
     const id = url.searchParams.get('id')
     if (!id) return json({ error: 'Missing id' }, { status: 400 })
     await initTable(db)
+    const row = await db.prepare('SELECT data FROM uploads WHERE id = ?').bind(id).first()
+    if (row?.data?.startsWith('r2:') && env.UPLOADS_R2) {
+      try { await env.UPLOADS_R2.delete(row.data.slice(3)) } catch {}
+    }
     await db.prepare('DELETE FROM uploads WHERE id = ?').bind(id).run()
     return json({ ok: true })
   } catch (err) {

@@ -8,9 +8,17 @@ binding = "VIEWS_DB"
 database_name = "gogurt-views"
 database_id = "74bf3492-e33e-4244-a4de-c28f8bd56b1e"
 
+[[r2_buckets]]
+binding = "UPLOADS_R2"
+bucket_name = "gogurt-uploads"
+
 [env.production]
 
 [[env.production.d1_databases]]
 binding = "VIEWS_DB"
 database_name = "gogurt-views"
 database_id = "74bf3492-e33e-4244-a4de-c28f8bd56b1e"
+
+[[env.production.r2_buckets]]
+binding = "UPLOADS_R2"
+bucket_name = "gogurt-uploads"

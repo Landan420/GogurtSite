@@ -293,6 +293,7 @@ function fileIcon(ext) {
   if (ext === 'json') return '{}'
   if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return '🖼'
   if (['mp3', 'wav', 'ogg'].includes(ext)) return '🎵'
+  if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) return '🎬'
   return '📁'
 }
 
@@ -310,6 +311,7 @@ function previewType(ext) {
   if (['lua', 'txt', 'md', 'json', 'js', 'ts', 'css', 'html', 'xml', 'yaml', 'yml', 'sh', 'py', 'rb', 'go', 'rs', 'c', 'cpp', 'h', 'java'].includes(ext)) return 'text'
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) return 'image'
   if (['mp3', 'wav', 'ogg', 'flac', 'm4a'].includes(ext)) return 'audio'
+  if (['mp4', 'webm', 'mov'].includes(ext)) return 'video'
   return 'none'
 }
 
@@ -1128,17 +1130,36 @@ function UploadsPage() {
     fetch('/api/files').then(r => r.json()).then(setFiles).catch(() => setFiles([])).finally(() => setLoading(false))
   }, [])
 
+  const [textCache, setTextCache] = useState({})
+  useEffect(() => {
+    if (!viewingId) return
+    const f = files.find(x => x.id === viewingId)
+    if (!f || !f.data?.startsWith('r2:') || previewType(f.ext) !== 'text' || textCache[f.id] != null) return
+    fetch(`/api/raw/${encodeURIComponent(f.name)}`)
+      .then(r => r.text())
+      .then(t => setTextCache(c => ({ ...c, [f.id]: t })))
+      .catch(() => {})
+  }, [viewingId, files, textCache])
+
+  function rawUrl(file) {
+    return `${window.location.origin}/api/raw/${encodeURIComponent(file.name)}`
+  }
+
+  function isR2(file) {
+    return typeof file.data === 'string' && file.data.startsWith('r2:')
+  }
+
+  function fileSrc(file) {
+    return isR2(file) ? rawUrl(file) : file.data
+  }
+
   function download(file) {
     const a = document.createElement('a')
-    a.href = file.data
+    a.href = fileSrc(file)
     a.download = file.name
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-  }
-
-  function rawUrl(file) {
-    return `${window.location.origin}/api/raw/${encodeURIComponent(file.name)}`
   }
 
   function copyRaw(file) {
@@ -1189,9 +1210,10 @@ function UploadsPage() {
                 </div>
                 {isOpen && (
                   <div className="upload-preview">
-                    {pt === 'text' && <pre className="upload-preview-code"><code>{decodeDataUrl(f.data)}</code></pre>}
-                    {pt === 'image' && <img className="upload-preview-img" src={f.data} alt={f.name} />}
-                    {pt === 'audio' && <audio className="upload-preview-audio" controls src={f.data} />}
+                    {pt === 'text' && <pre className="upload-preview-code"><code>{isR2(f) ? (textCache[f.id] ?? 'loading…') : decodeDataUrl(f.data)}</code></pre>}
+                    {pt === 'image' && <img className="upload-preview-img" src={fileSrc(f)} alt={f.name} />}
+                    {pt === 'audio' && <audio className="upload-preview-audio" controls src={fileSrc(f)} />}
+                    {pt === 'video' && <video className="upload-preview-video" controls preload="metadata" src={fileSrc(f)} />}
                     <div className="upload-preview-rawbar">
                       <span className="uprb-label">{f.ext === 'lua' ? 'exec' : 'raw'}</span>
                       <code className="uprb-url">{f.ext === 'lua' ? `loadstring(game:HttpGet("${rawUrl(f)}"))()`  : rawUrl(f)}</code>

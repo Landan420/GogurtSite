@@ -1020,6 +1020,16 @@ html { scrollbar-color: rgba(var(--accent-rgb), 0.28) transparent; scrollbar-wid
   border-bottom: 1px solid rgba(var(--accent-rgb), 0.08);
 }
 
+.upload-preview-video {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  margin: 0 auto;
+  padding: 12px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.08);
+}
+
 .upload-preview-audio {
   display: block;
   width: calc(100% - 32px);

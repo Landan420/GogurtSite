@@ -3321,6 +3321,11 @@ const SITE_LINKS = [
   { name: 'quibbish',      host: 'quibbish.pages.dev',      hue: 30  },
   { name: 'tawnic',        host: 'tawnic.pages.dev',        hue: 330 },
   { name: 'sparkanalyzer', host: 'sparkanalyzer.pages.dev', hue: 45  },
+  { name: 'landan',        host: 'landan.pages.dev',        hue: 0   },
+  { name: 'gogurtlb',      host: 'gogurtlb.pages.dev',      hue: 175 },
+  { name: 'spinagame',     host: 'spinagame.pages.dev',     hue: 225 },
+  { name: 'landanmo',      host: 'landanmo.pages.dev',      hue: 300 },
+  { name: 'bakedwithdre',  host: 'bakedwithdre.pages.dev',  hue: 75  },
 ]
 
 function SiteDock() {

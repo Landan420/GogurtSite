@@ -2676,6 +2676,10 @@ function AdminNav({ active }) {
         className={`admin-nav-tab${active === 'guestbook' ? ' active' : ''}`}
         onClick={() => navigate('/admin/guestbook')}
       >guestbook</button>
+      <button
+        className={`admin-nav-tab${active === 'uptime' ? ' active' : ''}`}
+        onClick={() => navigate('/admin/uptime')}
+      >uptime</button>
     </div>
   )
 }
@@ -2792,6 +2796,48 @@ function AdminGuestbookPanel() {
 
         <p className="admin-section-label">live</p>
         {approved.length === 0 ? <p className="gbm-empty">nothing published yet.</p> : approved.map(row)}
+      </div>
+    </div>
+  )
+}
+
+// Pulse (uptime for every site) is admin-only: it lives on its own Worker and
+// only loads data with the short-lived token /api/admin/pulse-token signs.
+function AdminUptimePanel() {
+  const [src, setSrc] = useState('')
+  const [error, setError] = useState('')
+  const { profile: discordProfile } = useDiscordPresence()
+  useAccentColor(discordProfile?.spotify?.album_art_url)
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token') || ''
+    if (!token) { navigate('/admin'); return }
+    fetch('/api/admin/pulse-token', { headers: { Authorization: `Bearer ${token}` } })
+      .then(async r => {
+        if (r.status === 401) { localStorage.removeItem('admin_token'); navigate('/admin'); return }
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.error || `Failed (${r.status})`)
+        setSrc(data.url)
+      })
+      .catch(err => setError(err.message))
+  }, [])
+
+  return (
+    <div className="admin-shell admin-shell--full">
+      <div className="top-rainbow-bar" aria-hidden="true" />
+      <div className="page-backdrop" />
+      <AdminNav active="uptime" />
+      <div className="admin-uptime">
+        <div className="admin-panel-header">
+          <h2 className="admin-panel-title">
+            <button onClick={() => navigate('/')} className="admin-site-link">site</button> uptime
+          </h2>
+          <span className="gbm-tally">every site · homepage + apis</span>
+        </div>
+        {error ? <p className="admin-error">{error}</p> : null}
+        {src
+          ? <iframe className="admin-uptime-frame" src={src} title="Pulse uptime dashboard" referrerPolicy="no-referrer" />
+          : !error && <p className="admin-checking">checking session…</p>}
       </div>
     </div>
   )
@@ -3427,6 +3473,7 @@ export default function App() {
   if (window.location.pathname === '/admin') return <AdminPanel />
   if (window.location.pathname === '/admin/uploads') return <AdminUploadsPanel />
   if (window.location.pathname === '/admin/guestbook') return <AdminGuestbookPanel />
+  if (window.location.pathname === '/admin/uptime') return <AdminUptimePanel />
   if (window.location.pathname === '/uploads') return <UploadsPage />
   if (window.location.pathname === '/trimmer') return <TrimmerPage />
 

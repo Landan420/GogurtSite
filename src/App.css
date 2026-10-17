@@ -3147,6 +3147,34 @@ input[type='range'] {
   max-width: 640px;
 }
 
+.admin-shell--full {
+  place-items: start center;
+}
+
+.admin-uptime {
+  width: 100%;
+  max-width: 1480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+  margin-top: 44px;
+}
+
+.admin-uptime .admin-panel-header {
+  padding-right: 96px; /* clear the fixed admin nav */
+}
+
+.admin-uptime-frame {
+  width: 100%;
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: #0e0e0f;
+}
+
 .admin-title {
   font-family: var(--mono);
   font-size: 28px;

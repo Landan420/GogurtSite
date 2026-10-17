@@ -2,7 +2,7 @@
 // gogurtsitepulse). Pulse refuses every API call without a token signed with
 // the shared PULSE_SECRET, so this endpoint is the only way in.
 
-const PULSE_URL = 'https://gogurtsitepulse.elmorelandan.workers.dev'
+const PULSE_URL = 'https://gogurtsitepulse.pages.dev'
 const TTL = 12 * 60 * 60 * 1000
 
 function json(data, init = {}) {
